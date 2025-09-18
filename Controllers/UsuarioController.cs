@@ -53,12 +53,12 @@ namespace InmobiliariaWebApp.Controllers
 
     if (usuario == null || usuario.Clave != Clave)
     {
-        // Guardamos un mensaje de error que la vista podrá mostrar
+        // mensaje de error que la vista podrá mostrar
         TempData["Error"] = "El email o la contraseña son incorrectos.";
         return View();
     }
 
-    // Si las credenciales son correctas, creamos la sesión (cookie)
+
     var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Name, usuario.Email),
@@ -75,6 +75,10 @@ namespace InmobiliariaWebApp.Controllers
 
     return RedirectToAction("Index", "Home");
 }
-        
+    public async Task<IActionResult> Logout()
+{
+    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return RedirectToAction("Index", "Home");
+}    
     }
 }
