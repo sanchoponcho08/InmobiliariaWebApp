@@ -1,0 +1,56 @@
+@model InmobiliariaWebApp.Models.Inmueble
+
+@{
+    ViewData["Title"] = "Editar Inmueble";
+}
+
+<h1>Editar Inmueble</h1>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <div class="form-group">
+                <label asp-for="PropietarioId" class="control-label"></label>
+                <select asp-for="PropietarioId" class="form-control" asp-items="ViewBag.PropietarioId"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="TipoInmuebleId" class="control-label"></label>
+                <select asp-for="TipoInmuebleId" class="form-control" asp-items="ViewBag.TipoInmuebleId"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="Direccion" class="control-label"></label>
+                <input asp-for="Direccion" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Uso" class="control-label"></label>
+                <input asp-for="Uso" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Ambientes" class="control-label"></label>
+                <input asp-for="Ambientes" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Precio" class="control-label"></label>
+                <input asp-for="Precio" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Coordenadas" class="control-label"></label>
+                <input asp-for="Coordenadas" class="form-control" />
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Disponible" /> @Html.DisplayNameFor(model => model.Disponible)
+                </label>
+            </div>
+
+            <br/>
+            <div class="form-group">
+                <input type="submit" value="Guardar Cambios" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>
+            </div>
+        </form>
+    </div>
+</div>
