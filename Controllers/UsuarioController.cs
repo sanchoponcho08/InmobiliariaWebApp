@@ -2,6 +2,10 @@ using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 
 namespace InmobiliariaWebApp.Controllers
 {
@@ -47,21 +51,28 @@ namespace InmobiliariaWebApp.Controllers
     var usuario = await _context.Usuarios
         .FirstOrDefaultAsync(u => u.Email == Email);
 
-    if (usuario == null)
+    if (usuario == null || usuario.Clave != Clave)
     {
-        // Si no se encuentra el usuario, volvemos a la vista de login
-        //  agregar un mensaje de error despues
+        // Guardamos un mensaje de error que la vista podrá mostrar
+        TempData["Error"] = "El email o la contraseña son incorrectos.";
         return View();
     }
 
-    // Comparamos la contraseña del formulario con la guardada en la BD texto luego modificar
-    if (usuario.Clave != Clave)
+    // Si las credenciales son correctas, creamos la sesión (cookie)
+    var claims = new List<Claim>
     {
-        
-        return View();
-    }
+        new Claim(ClaimTypes.Name, usuario.Email),
+        new Claim("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
+        new Claim(ClaimTypes.Role, usuario.Rol),
+    };
 
-    
+    var claimsIdentity = new ClaimsIdentity(
+        claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+    await HttpContext.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme, 
+        new ClaimsPrincipal(claimsIdentity));
+
     return RedirectToAction("Index", "Home");
 }
         

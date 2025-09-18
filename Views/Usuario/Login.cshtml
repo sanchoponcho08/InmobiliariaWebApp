@@ -3,7 +3,12 @@
 }
 
 <h1>Inicio de Sesión</h1>
-
+@if (TempData["Error"] != null)
+{
+<div class="alert alert-danger">
+        <span>@TempData["Error"]</span>
+    </div>
+}
 <form asp-action="Login" method="post">
     <div class="form-group">
         <label for="Email">Email</label>
