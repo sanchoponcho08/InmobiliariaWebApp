@@ -17,6 +17,7 @@ namespace InmobiliariaWebApp.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Propietario> Propietarios { get; set; }
         public DbSet<Inquilino> Inquilinos { get; set; }
+        public DbSet<TipoInmueble> TiposInmuebles { get; set; }
 
     
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
