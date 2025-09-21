@@ -1,0 +1,44 @@
+@model IEnumerable<InmobiliariaWebApp.Models.Contrato>
+
+@{
+    ViewData["Title"] = "Contratos";
+}
+
+<h1>Listado de Contratos</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Inquilino</th>
+            <th>Inmueble (Dirección)</th>
+            <th>Dueño del Inmueble</th>
+            <th>@Html.DisplayNameFor(model => model.FechaInicio)</th>
+            <th>@Html.DisplayNameFor(model => model.FechaFin)</th>
+            <th>@Html.DisplayNameFor(model => model.MontoAlquiler)</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model) {
+        <tr>
+            <td>@item.Inquilino?.NombreCompleto</td>
+            <td>@item.Inmueble?.Direccion</td>
+            <td>@item.Inmueble?.Dueño?.NombreCompleto</td>
+            <td>@Html.DisplayFor(modelItem => item.FechaInicio)</td>
+            <td>@Html.DisplayFor(modelItem => item.FechaFin)</td>
+            <td>@Html.DisplayFor(modelItem => item.MontoAlquiler)</td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a> |
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a> |
+                <a asp-controller="Pago" asp-action="Index" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Pagos</a> |
+                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Eliminar</a>
+            </td>
+            
+        </tr>
+    }
+    </tbody>
+</table>

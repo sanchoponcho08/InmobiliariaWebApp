@@ -4,6 +4,7 @@ using InmobiliariaWebApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InmobiliariaWebApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250921223913_ContratoMigration")]
+    partial class ContratoMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -129,41 +132,6 @@ namespace InmobiliariaWebApp.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Inquilinos");
-                });
-
-            modelBuilder.Entity("InmobiliariaWebApp.Models.Pago", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ContratoId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Detalle")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("FechaPago")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal>("Importe")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<int>("NumeroPago")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContratoId");
-
-                    b.ToTable("Pagos");
                 });
 
             modelBuilder.Entity("InmobiliariaWebApp.Models.Propietario", b =>
@@ -288,17 +256,6 @@ namespace InmobiliariaWebApp.Migrations
                     b.Navigation("Dueño");
 
                     b.Navigation("Tipo");
-                });
-
-            modelBuilder.Entity("InmobiliariaWebApp.Models.Pago", b =>
-                {
-                    b.HasOne("InmobiliariaWebApp.Models.Contrato", "Contrato")
-                        .WithMany()
-                        .HasForeignKey("ContratoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contrato");
                 });
 #pragma warning restore 612, 618
         }

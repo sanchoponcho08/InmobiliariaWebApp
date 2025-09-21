@@ -1,0 +1,27 @@
+@model InmobiliariaWebApp.Models.Contrato
+
+@{
+    ViewData["Title"] = "Eliminar Contrato";
+}
+
+<h1>Eliminar Contrato</h1>
+<h3>¿Estás seguro de que quieres eliminar este contrato?</h3>
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Inquilino</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Inquilino.NombreCompleto)</dd>
+        <dt class="col-sm-2">Inmueble</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Inmueble.Direccion)</dd>
+        <dt class="col-sm-2">Fecha de Inicio</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.FechaInicio)</dd>
+        <dt class="col-sm-2">Monto del Alquiler</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.MontoAlquiler)</dd>
+    </dl>
+    
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Eliminar" class="btn btn-danger" /> |
+        <a asp-action="Index">Volver al Listado</a>
+    </form>
+</div>
