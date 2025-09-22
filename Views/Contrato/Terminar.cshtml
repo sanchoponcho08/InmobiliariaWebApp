@@ -1,0 +1,33 @@
+@model InmobiliariaWebApp.Models.Contrato
+
+@{
+    ViewData["Title"] = "Terminar Contrato";
+}
+
+<h1>Terminar Contrato Anticipadamente</h1>
+<h3>¿Estas seguro de que quieres terminar este contrato?</h3>
+<div>
+    <hr />
+    <h4>Detalles del Contrato</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Inquilino</dt>
+        <dd class="col-sm-9">@Model.Inquilino?.NombreCompleto</dd>
+        
+        <dt class="col-sm-3">Inmueble</dt>
+        <dd class="col-sm-9">@Model.Inmueble?.Direccion</dd>
+    </dl>
+    
+    <hr />
+    <h4>Calculo de Multa</h4>
+    <div class="alert alert-warning">
+        <p>Según las politicas de la empresa, al rescindir el contrato antes de tiempo, corresponde una multa de:</p>
+        <h4 class="alert-heading">$ @ViewBag.Multa</h4>
+    </div>
+    
+    <form asp-action="Terminar">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="Multa" value="@ViewBag.Multa" />
+        <input type="submit" value="Confirmar y Registrar Pago de Multa" class="btn btn-danger" /> |
+        <a asp-action="Index">Cancelar y Volver al Listado</a>
+    </form>
+</div>

@@ -121,5 +121,55 @@ namespace InmobiliariaWebApp.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+        public async Task<IActionResult> Terminar(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var contrato = await _context.Contratos.FindAsync(id);
+            if (contrato == null) return NotFound();
+            var totalMeses = (contrato.FechaFin.Year - contrato.FechaInicio.Year) * 12 + contrato.FechaFin.Month - contrato.FechaInicio.Month;
+            var mesesCumplidos = (DateTime.Now.Year - contrato.FechaInicio.Year) * 12 + DateTime.Now.Month - contrato.FechaInicio.Month;
+
+            if (mesesCumplidos < totalMeses / 2.0)
+            {
+                // Si cumplio menos de la mitad, la multa es de 2 meses
+                ViewBag.Multa = contrato.MontoAlquiler * 2;
+            }
+            else
+            {
+                // Si cumplio más de la mitad, la multa es de 1 mes
+                ViewBag.Multa = contrato.MontoAlquiler;
+            }
+
+            return View("Terminar", contrato);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Terminar(int id, decimal Multa)
+        {
+            var contrato = await _context.Contratos.FindAsync(id);
+            if (contrato == null) return NotFound();
+
+            // Actualizamos el contrato con la fecha de rescisión y la multa
+            contrato.FechaRescision = DateTime.Now;
+            contrato.Multa = Multa;
+            _context.Update(contrato);
+
+            // Creamos un nuevo pago para registrar la multa
+            var pagoMulta = new Pago
+            {
+                ContratoId = contrato.Id,
+                NumeroPago = 99, // Un número especial para identificar la multa
+                FechaPago = DateTime.Now,
+                Importe = Multa,
+                Detalle = "Pago de multa por rescisión anticipada",
+                Estado = "Vigente"
+            };
+            _context.Pagos.Add(pagoMulta);
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
