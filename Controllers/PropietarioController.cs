@@ -1,132 +1,175 @@
 using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace InmobiliariaWebApp.Controllers
 {
-    [Authorize] 
+    [Authorize]
     public class PropietarioController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly Conexion _conexion;
 
-        public PropietarioController(ApplicationDbContext context)
+        public PropietarioController(IConfiguration configuration)
         {
-            _context = context;
+            _conexion = new Conexion(configuration);
         }
 
-        
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.Propietarios.ToListAsync());
+            var propietarios = new List<Propietario>();
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id, Dni, Nombre, Apellido, Email, Telefono FROM Propietarios";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            propietarios.Add(new Propietario
+                            {
+                                Id = reader.GetInt32("Id"),
+                                Dni = reader.GetString("Dni"),
+                                Nombre = reader.GetString("Nombre"),
+                                Apellido = reader.GetString("Apellido"),
+                                Email = reader.GetString("Email"),
+                                Telefono = reader.GetString("Telefono")
+                            });
+                        }
+                    }
+                }
+            }
+            return View(propietarios);
         }
 
-        
+        public IActionResult Details(int id)
+        {
+            Propietario? propietario = null;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id, Dni, Nombre, Apellido, Email, Telefono FROM Propietarios WHERE Id = @Id";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            propietario = new Propietario
+                            {
+                                Id = reader.GetInt32("Id"),
+                                Dni = reader.GetString("Dni"),
+                                Nombre = reader.GetString("Nombre"),
+                                Apellido = reader.GetString("Apellido"),
+                                Email = reader.GetString("Email"),
+                                Telefono = reader.GetString("Telefono")
+                            };
+                        }
+                    }
+                }
+            }
+            return propietario == null ? NotFound() : View(propietario);
+        }
+
         public IActionResult Create()
         {
             return View();
         }
 
-        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Dni,Nombre,Apellido,Email,Telefono")] Propietario propietario)
+        public IActionResult Create(Propietario propietario)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(propietario);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(propietario);
-        }
-
-        
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var propietario = await _context.Propietarios.FindAsync(id);
-            if (propietario == null)
-            {
-                return NotFound();
-            }
-            return View(propietario);
-        }
-
-        
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Dni,Nombre,Apellido,Email,Telefono")] Propietario propietario)
-        {
-            if (id != propietario.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                using (var connection = _conexion.TraerConexion())
                 {
-                    _context.Update(propietario);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PropietarioExists(propietario.Id))
+                    string sql = "INSERT INTO Propietarios (Dni, Nombre, Apellido, Email, Telefono) VALUES (@Dni, @Nombre, @Apellido, @Email, @Telefono)";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
                     {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
+                        command.Parameters.AddWithValue("@Dni", propietario.Dni);
+                        command.Parameters.AddWithValue("@Nombre", propietario.Nombre);
+                        command.Parameters.AddWithValue("@Apellido", propietario.Apellido);
+                        command.Parameters.AddWithValue("@Email", propietario.Email);
+                        command.Parameters.AddWithValue("@Telefono", propietario.Telefono);
+                        connection.Open();
+                        command.ExecuteNonQuery();
                     }
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(propietario);
+            catch
+            {
+                return View();
+            }
         }
 
-        
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Edit(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var propietario = await _context.Propietarios
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (propietario == null)
-            {
-                return NotFound();
-            }
-
-            return View(propietario);
+            return Details(id);
         }
 
-        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, Propietario propietario)
+        {
+            try
+            {
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "UPDATE Propietarios SET Dni = @Dni, Nombre = @Nombre, Apellido = @Apellido, Email = @Email, Telefono = @Telefono WHERE Id = @Id";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Dni", propietario.Dni);
+                        command.Parameters.AddWithValue("@Nombre", propietario.Nombre);
+                        command.Parameters.AddWithValue("@Apellido", propietario.Apellido);
+                        command.Parameters.AddWithValue("@Email", propietario.Email);
+                        command.Parameters.AddWithValue("@Telefono", propietario.Telefono);
+                        command.Parameters.AddWithValue("@Id", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
+
+        public IActionResult Delete(int id)
+        {
+            return Details(id);
+        }
+
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var propietario = await _context.Propietarios.FindAsync(id);
-            if (propietario != null)
+            try
             {
-                _context.Propietarios.Remove(propietario);
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "DELETE FROM Propietarios WHERE Id = @Id";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                return RedirectToAction(nameof(Index));
             }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool PropietarioExists(int id)
-        {
-            return _context.Propietarios.Any(e => e.Id == id);
+            catch
+            {
+                return View();
+            }
         }
     }
 }

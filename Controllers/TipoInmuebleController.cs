@@ -1,26 +1,71 @@
-
 using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace InmobiliariaWebApp.Controllers
 {
-    // Solo usuarios con el rol "Administrador" pueden acceder
     [Authorize(Roles = "Administrador")]
     public class TipoInmuebleController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly Conexion _conexion;
 
-        public TipoInmuebleController(ApplicationDbContext context)
+        public TipoInmuebleController(IConfiguration configuration)
         {
-            _context = context;
+            _conexion = new Conexion(configuration);
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.TiposInmuebles.ToListAsync());
+            var tipos = new List<TipoInmueble>();
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id, Nombre FROM TiposInmuebles";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            tipos.Add(new TipoInmueble
+                            {
+                                Id = reader.GetInt32("Id"),
+                                Nombre = reader.GetString("Nombre")
+                            });
+                        }
+                    }
+                }
+            }
+            return View(tipos);
+        }
+
+        public IActionResult Details(int id)
+        {
+            TipoInmueble? tipo = null;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id, Nombre FROM TiposInmuebles WHERE Id = @Id";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            tipo = new TipoInmueble
+                            {
+                                Id = reader.GetInt32("Id"),
+                                Nombre = reader.GetString("Nombre")
+                            };
+                        }
+                    }
+                }
+            }
+            return tipo == null ? NotFound() : View(tipo);
         }
 
         public IActionResult Create()
@@ -30,67 +75,85 @@ namespace InmobiliariaWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Nombre")] TipoInmueble tipoInmueble)
+        public IActionResult Create(TipoInmueble tipoInmueble)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(tipoInmueble);
-                await _context.SaveChangesAsync();
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "INSERT INTO TiposInmuebles (Nombre) VALUES (@Nombre)";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Nombre", tipoInmueble.Nombre);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
-            return View(tipoInmueble);
+            catch
+            {
+                return View();
+            }
         }
 
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int id)
         {
-            if (id == null) return NotFound();
-            var tipoInmueble = await _context.TiposInmuebles.FindAsync(id);
-            if (tipoInmueble == null) return NotFound();
-            return View(tipoInmueble);
+            return Details(id);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Nombre")] TipoInmueble tipoInmueble)
+        public IActionResult Edit(int id, TipoInmueble tipoInmueble)
         {
-            if (id != tipoInmueble.Id) return NotFound();
-
-            if (ModelState.IsValid)
+            try
             {
-                try
+                using (var connection = _conexion.TraerConexion())
                 {
-                    _context.Update(tipoInmueble);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.TiposInmuebles.Any(e => e.Id == tipoInmueble.Id)) return NotFound();
-                    else throw;
+                    string sql = "UPDATE TiposInmuebles SET Nombre = @Nombre WHERE Id = @Id";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Nombre", tipoInmueble.Nombre);
+                        command.Parameters.AddWithValue("@Id", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(tipoInmueble);
+            catch
+            {
+                return View();
+            }
         }
 
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int id)
         {
-            if (id == null) return NotFound();
-            var tipoInmueble = await _context.TiposInmuebles.FirstOrDefaultAsync(m => m.Id == id);
-            if (tipoInmueble == null) return NotFound();
-            return View(tipoInmueble);
+            return Details(id);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var tipoInmueble = await _context.TiposInmuebles.FindAsync(id);
-            if (tipoInmueble != null)
+            try
             {
-                _context.TiposInmuebles.Remove(tipoInmueble);
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "DELETE FROM TiposInmuebles WHERE Id = @Id";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                return RedirectToAction(nameof(Index));
             }
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            catch
+            {
+                return View();
+            }
         }
     }
 }
