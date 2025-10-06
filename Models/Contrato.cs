@@ -25,11 +25,16 @@ namespace InmobiliariaWebApp.Models
         public DateTime? FechaRescision { get; set; } // El '?' permite que sea nulo
 
         public decimal Multa { get; set; }
-        
+
         [ForeignKey(nameof(InquilinoId))]
         public Inquilino? Inquilino { get; set; }
-        
+
         [ForeignKey(nameof(InmuebleId))]
         public Inmueble? Inmueble { get; set; }
+
+        public int? UsuarioIdCreador { get; set; }
+        public int? UsuarioIdTerminador { get; set; }
+        public Usuario? Creador { get; set; }
+        
     }
 }

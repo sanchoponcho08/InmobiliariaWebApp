@@ -2,39 +2,41 @@ using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using MySql.Data.MySqlClient;
 
 namespace InmobiliariaWebApp.Controllers
 {
     [Authorize]
     public class PagoController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly Conexion _conexion;
 
-        public PagoController(ApplicationDbContext context)
+        public PagoController(IConfiguration configuration)
         {
-            _context = context;
+            _conexion = new Conexion(configuration);
         }
 
-        public async Task<IActionResult> Index(int id)
+        private int ObtenerUsuarioIdActual()
+        {
+            var email = User.Identity.Name;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id FROM Usuarios WHERE Email = @Email";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Email", email);
+                    connection.Open();
+                    var id = command.ExecuteScalar();
+                    return id != null ? Convert.ToInt32(id) : 0;
+                }
+            }
+        }
+
+        public IActionResult Index(int id)
         {
             ViewBag.ContratoId = id;
-            var contrato = await _context.Contratos
-                .Include(c => c.Inquilino)
-                .Include(c => c.Inmueble)
-                .FirstOrDefaultAsync(c => c.Id == id);
-            
-            if (contrato != null)
-            {
-                ViewBag.ContratoInfo = $"Contrato de {contrato.Inquilino.NombreCompleto} sobre {contrato.Inmueble.Direccion}";
-            }
-
-            var pagos = _context.Pagos
-                .Include(p => p.Contrato)
-                .Where(p => p.ContratoId == id);
-                
-            return View(await pagos.ToListAsync());
+            // Lógica para mostrar pagos
+            return View(new List<Pago>());
         }
 
         public IActionResult Create(int id)
@@ -45,85 +47,70 @@ namespace InmobiliariaWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Pago pago)
+        public IActionResult Create(Pago pago)
         {
-            ModelState.Remove("Contrato");
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(pago);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index), new { id = pago.ContratoId });
-            }
-            return View(pago);
-        }
-
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-            var pago = await _context.Pagos.FindAsync(id);
-            if (pago == null) return NotFound();
-            return View(pago);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Pago pago)
-        {
-            if (id != pago.Id) return NotFound();
-
-            ModelState.Remove("Contrato");
-            if (ModelState.IsValid)
-            {
-                try
+                using (var connection = _conexion.TraerConexion())
                 {
-                    //  Solo se puede editar el detalle (Regla)
-                    var pagoOriginal = await _context.Pagos.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
-                    if(pagoOriginal != null)
+                    pago.UsuarioIdCreador = ObtenerUsuarioIdActual();
+                    string sql = "INSERT INTO Pagos (NumeroPago, ContratoId, FechaPago, Importe, Detalle, Estado, UsuarioIdCreador) VALUES (@NumeroPago, @ContratoId, @FechaPago, @Importe, @Detalle, @Estado, @UsuarioIdCreador)";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
                     {
-                        pago.NumeroPago = pagoOriginal.NumeroPago;
-                        pago.FechaPago = pagoOriginal.FechaPago;
-                        pago.Importe = pagoOriginal.Importe;
+                        command.Parameters.AddWithValue("@NumeroPago", pago.NumeroPago);
+                        command.Parameters.AddWithValue("@ContratoId", pago.ContratoId);
+                        command.Parameters.AddWithValue("@FechaPago", pago.FechaPago);
+                        command.Parameters.AddWithValue("@Importe", pago.Importe);
+                        command.Parameters.AddWithValue("@Detalle", pago.Detalle);
+                        command.Parameters.AddWithValue("@Estado", "Vigente");
+                        command.Parameters.AddWithValue("@UsuarioIdCreador", pago.UsuarioIdCreador);
+                        connection.Open();
+                        command.ExecuteNonQuery();
                     }
-
-                    _context.Update(pago);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Pagos.Any(e => e.Id == pago.Id)) return NotFound();
-                    else throw;
                 }
                 return RedirectToAction(nameof(Index), new { id = pago.ContratoId });
             }
-            return View(pago);
+            catch { return View(pago); }
+        }
+
+        [Authorize(Roles = "Administrador")]
+        public IActionResult Delete(int id)
+        {
+            // Lógica para buscar el pago
+            return View();
         }
         
-        [Authorize(Roles = "Administrador")]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null) return NotFound();
-            var pago = await _context.Pagos
-                .Include(p => p.Contrato)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (pago == null) return NotFound();
-            return View(pago);
-        }
-
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrador")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var pago = await _context.Pagos.FindAsync(id);
-            if (pago != null)
+            int contratoId = 0;
+            try
             {
-                //  cambiamos el estado en lugar de borrar
-                pago.Estado = "Anulado";
-                _context.Update(pago);
-            }
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sqlSelect = "SELECT ContratoId FROM Pagos WHERE Id = @Id";
+                    using(var command = new MySqlCommand(sqlSelect, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        connection.Open();
+                        var result = command.ExecuteScalar();
+                        if(result != null) contratoId = Convert.ToInt32(result);
+                    }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index), new { id = pago.ContratoId });
+                    string sqlUpdate = "UPDATE Pagos SET Estado = @Estado, UsuarioIdAnulador = @UsuarioIdAnulador WHERE Id = @Id";
+                    using (var command = new MySqlCommand(sqlUpdate, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Estado", "Anulado");
+                        command.Parameters.AddWithValue("@UsuarioIdAnulador", ObtenerUsuarioIdActual());
+                        command.Parameters.AddWithValue("@Id", id);
+                        command.ExecuteNonQuery();
+                    }
+                }
+                return RedirectToAction(nameof(Index), new { id = contratoId });
+            }
+            catch { return View(); }
         }
     }
 }

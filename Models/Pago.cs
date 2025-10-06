@@ -17,13 +17,16 @@ namespace InmobiliariaWebApp.Models
         public DateTime FechaPago { get; set; }
 
         public decimal Importe { get; set; }
-        
+
         public string Detalle { get; set; } = "";
-        
+
 
         public string Estado { get; set; } = "Vigente";
 
         [ForeignKey(nameof(ContratoId))]
         public Contrato? Contrato { get; set; }
+        
+        public int? UsuarioIdCreador { get; set; }
+        public int? UsuarioIdAnulador { get; set; }
     }
 }
