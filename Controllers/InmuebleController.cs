@@ -27,7 +27,7 @@ namespace InmobiliariaWebApp.Controllers
             using (var connection = _conexion.TraerConexion())
             {
                 connection.Open();
-                
+
                 string sqlPropietarios = "SELECT Id, Nombre, Apellido FROM Propietarios";
                 using (var command = new MySqlCommand(sqlPropietarios, (MySqlConnection)connection))
                 using (var reader = command.ExecuteReader())
@@ -66,7 +66,7 @@ namespace InmobiliariaWebApp.Controllers
                             Disponible = reader.GetBoolean("Disponible"),
                             PropietarioId = reader.GetInt32("PropietarioId")
                         };
-                        
+
                         if (propietarios.ContainsKey(inmueble.PropietarioId))
                         {
                             inmueble.Dueño = propietarios[inmueble.PropietarioId];
@@ -76,7 +76,7 @@ namespace InmobiliariaWebApp.Controllers
                         {
                             inmueble.Tipo = tipos[inmueble.TipoInmuebleId];
                         }
-                        
+
                         inmuebles.Add(inmueble);
                     }
                 }
@@ -89,7 +89,7 @@ namespace InmobiliariaWebApp.Controllers
             using (var connection = _conexion.TraerConexion())
             {
                 connection.Open();
-                
+
                 var propietarios = new List<Propietario>();
                 string sqlPropietarios = "SELECT Id, Nombre, Apellido FROM Propietarios";
                 using (var command = new MySqlCommand(sqlPropietarios, (MySqlConnection)connection))
@@ -100,7 +100,7 @@ namespace InmobiliariaWebApp.Controllers
                         propietarios.Add(new Propietario { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") });
                     }
                 }
-                
+
                 var tipos = new List<TipoInmueble>();
                 string sqlTipos = "SELECT Id, Nombre FROM TiposInmuebles";
                 using (var command = new MySqlCommand(sqlTipos, (MySqlConnection)connection))
@@ -111,7 +111,7 @@ namespace InmobiliariaWebApp.Controllers
                         tipos.Add(new TipoInmueble { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre") });
                     }
                 }
-                
+
                 ViewData["PropietarioId"] = new SelectList(propietarios, "Id", "NombreCompleto");
                 ViewData["TipoInmuebleId"] = new SelectList(tipos, "Id", "Nombre");
             }
@@ -148,14 +148,14 @@ namespace InmobiliariaWebApp.Controllers
                 return View();
             }
         }
-        
+
         public IActionResult Edit(int id)
         {
             Inmueble? inmueble = null;
             using (var connection = _conexion.TraerConexion())
             {
                 connection.Open();
-                
+
                 string sql = "SELECT Id, Direccion, Uso, TipoInmuebleId, Ambientes, Precio, Coordenadas, Disponible, PropietarioId FROM Inmuebles WHERE Id = @Id";
                 using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
                 {
@@ -179,8 +179,8 @@ namespace InmobiliariaWebApp.Controllers
                         }
                     }
                 }
-                
-                if(inmueble == null) return NotFound();
+
+                if (inmueble == null) return NotFound();
 
                 var propietarios = new List<Propietario>();
                 string sqlPropietarios = "SELECT Id, Nombre, Apellido FROM Propietarios";
@@ -229,6 +229,70 @@ namespace InmobiliariaWebApp.Controllers
                         command.Parameters.AddWithValue("@Coordenadas", inmueble.Coordenadas);
                         command.Parameters.AddWithValue("@Disponible", inmueble.Disponible);
                         command.Parameters.AddWithValue("@PropietarioId", inmueble.PropietarioId);
+                        command.Parameters.AddWithValue("@Id", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View();
+            }
+        }
+        
+        [Authorize(Roles = "Administrador")]
+        public IActionResult Delete(int id)
+        {
+            Inmueble? inmueble = null;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = @"
+                    SELECT i.Id, i.Direccion, i.Uso, i.Precio, 
+                        p.Nombre AS PropietarioNombre, p.Apellido AS PropietarioApellido,
+                        t.Nombre AS TipoNombre
+                    FROM Inmuebles i
+                    JOIN Propietarios p ON i.PropietarioId = p.Id
+                    JOIN TiposInmuebles t ON i.TipoInmuebleId = t.Id
+                    WHERE i.Id = @Id";
+
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            inmueble = new Inmueble
+                            {
+                                Id = reader.GetInt32("Id"),
+                                Direccion = reader.GetString("Direccion"),
+                                Uso = reader.GetString("Uso"),
+                                Precio = reader.GetDecimal("Precio"),
+                                Dueño = new Propietario { Nombre = reader.GetString("PropietarioNombre"), Apellido = reader.GetString("PropietarioApellido") },
+                                Tipo = new TipoInmueble { Nombre = reader.GetString("TipoNombre") }
+                            };
+                        }
+                    }
+                }
+            }
+    return inmueble == null ? NotFound() : View(inmueble);
+}
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
+        public IActionResult DeleteConfirmed(int id)
+        {
+            try
+            {
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "DELETE FROM Inmuebles WHERE Id = @Id";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
                         command.Parameters.AddWithValue("@Id", id);
                         connection.Open();
                         command.ExecuteNonQuery();

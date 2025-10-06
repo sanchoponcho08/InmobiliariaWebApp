@@ -265,14 +265,37 @@ namespace InmobiliariaWebApp.Controllers
                 return View(contrato);
             }
         }
-        
+
+         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
-             return Details(id);
+            Contrato? contrato = null;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT c.Id, i.Nombre, i.Apellido, im.Direccion FROM Contratos c JOIN Inquilinos i ON c.InquilinoId = i.Id JOIN Inmuebles im ON c.InmuebleId = im.Id WHERE c.Id = @Id";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    connection.Open();
+                    using(var reader = command.ExecuteReader())
+                    {
+                        if(reader.Read())
+                        {
+                            contrato = new Contrato{
+                                Id = reader.GetInt32("Id"),
+                                Inquilino = new Inquilino{ Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") },
+                                Inmueble = new Inmueble { Direccion = reader.GetString("Direccion") }
+                            };
+                        }
+                    }
+                }
+            }
+            return contrato == null ? NotFound() : View(contrato);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public IActionResult DeleteConfirmed(int id)
         {
             try
@@ -296,12 +319,9 @@ namespace InmobiliariaWebApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+            catch { return View(); }
         }
-
+    
         public IActionResult Terminar(int id)
         {
             Contrato? contrato = null;

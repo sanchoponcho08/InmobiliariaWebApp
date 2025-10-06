@@ -143,6 +143,7 @@ namespace InmobiliariaWebApp.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
             return Details(id);
@@ -150,6 +151,7 @@ namespace InmobiliariaWebApp.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public IActionResult DeleteConfirmed(int id)
         {
             try

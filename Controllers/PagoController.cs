@@ -76,7 +76,7 @@ namespace InmobiliariaWebApp.Controllers
             {
                 try
                 {
-                    //  Solo se puede editar el detalle
+                    //  Solo se puede editar el detalle (Regla)
                     var pagoOriginal = await _context.Pagos.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
                     if(pagoOriginal != null)
                     {
@@ -97,7 +97,8 @@ namespace InmobiliariaWebApp.Controllers
             }
             return View(pago);
         }
-
+        
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -110,6 +111,7 @@ namespace InmobiliariaWebApp.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var pago = await _context.Pagos.FindAsync(id);
