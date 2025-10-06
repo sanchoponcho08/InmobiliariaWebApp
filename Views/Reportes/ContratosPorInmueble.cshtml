@@ -1,0 +1,51 @@
+@model IEnumerable<InmobiliariaWebApp.Models.Contrato>
+
+@{
+    ViewData["Title"] = "Contratos por Inmueble";
+}
+
+<h1>Reporte: Contratos por Inmueble</h1>
+
+<form asp-action="ContratosPorInmueble" method="get">
+    <div class="row align-items-end">
+        <div class="form-group col-md-4">
+            <label for="inmuebleId" class="control-label">Seleccionar Inmueble:</label>
+            <select name="inmuebleId" class="form-control" asp-items="ViewBag.Inmuebles">
+                <option value="0">-- Seleccione un Inmueble --</option>
+            </select>
+        </div>
+        <div class="form-group col-md-2">
+            <input type="submit" value="Buscar" class="btn btn-primary" />
+        </div>
+    </div>
+</form>
+<hr />
+
+@if (Model != null && Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Inquilino</th>
+                <th>Fecha de Inicio</th>
+                <th>Fecha de Finalización</th>
+                <th>Monto del Alquiler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Inquilino?.NombreCompleto</td>
+                    <td>@Html.DisplayFor(modelItem => item.FechaInicio)</td>
+                    <td>@Html.DisplayFor(modelItem => item.FechaFin)</td>
+                    <td>@Html.DisplayFor(modelItem => item.MontoAlquiler)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (ViewContext.HttpContext.Request.Query.ContainsKey("inmuebleId") && !"0".Equals(ViewContext.HttpContext.Request.Query["inmuebleId"]))
+{
+    <p>El inmueble seleccionado no tiene contratos registrados.</p>
+}

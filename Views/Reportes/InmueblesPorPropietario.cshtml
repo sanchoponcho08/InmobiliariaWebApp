@@ -1,0 +1,53 @@
+@model IEnumerable<InmobiliariaWebApp.Models.Inmueble>
+
+@{
+    ViewData["Title"] = "Inmuebles por Propietario";
+}
+
+<h1>Reporte: Inmuebles por Propietario</h1>
+
+<form asp-action="InmueblesPorPropietario" method="get">
+    <div class="row align-items-end">
+        <div class="form-group col-md-4">
+            <label for="propietarioId" class="control-label">Seleccionar Propietario:</label>
+            <select name="propietarioId" class="form-control" asp-items="ViewBag.Propietarios">
+                <option value="0">-- Seleccione un Propietario --</option>
+            </select>
+        </div>
+        <div class="form-group col-md-2">
+            <input type="submit" value="Buscar" class="btn btn-primary" />
+        </div>
+    </div>
+</form>
+<hr />
+
+@if (Model != null && Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Dirección</th>
+                <th>Uso</th>
+                <th>Tipo</th>
+                <th>Precio</th>
+                <th>Disponible</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Direccion</td>
+                    <td>@item.Uso</td>
+                    <td>@item.Tipo?.Nombre</td>
+                    <td>@item.Precio</td>
+                    <td>@(item.Disponible ? "Sí" : "No")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (ViewContext.HttpContext.Request.Query.ContainsKey("propietarioId") && !"0".Equals(ViewContext.HttpContext.Request.Query["propietarioId"]))
+{
+    <p>El propietario seleccionado no tiene inmuebles registrados.</p>
+}
