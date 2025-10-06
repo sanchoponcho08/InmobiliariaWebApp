@@ -45,7 +45,6 @@
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" asp-area="" asp-controller="Reportes" asp-action="ContratosVigentes">Contratos Vigentes</a></li>
             <li><a class="dropdown-item" asp-area="" asp-controller="Reportes" asp-action="ContratosPorVencer">Contratos por Vencer</a></li>
-            
         </ul>
     </li>
 </ul>
@@ -54,7 +53,7 @@
         @if (User.Identity.IsAuthenticated)
         {
             <li class="nav-item">
-                <a class="nav-link text-dark" href="#">Hola, @User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value</a>
+                <a class="nav-link text-dark" asp-controller="Usuario" asp-action="Perfil">Hola, @User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link text-dark" asp-area="" asp-controller="Usuario" asp-action="Logout">Logout</a>

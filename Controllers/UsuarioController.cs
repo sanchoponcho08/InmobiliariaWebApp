@@ -1,84 +1,211 @@
-using InmobiliariaWebApp.Data; 
+using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using MySql.Data.MySqlClient;
+using System.Data;
+using System.IO;
+using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-
 
 namespace InmobiliariaWebApp.Controllers
 {
     public class UsuarioController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly Conexion _conexion;
 
-
-        public UsuarioController(ApplicationDbContext context)
+        public UsuarioController(IConfiguration configuration)
         {
-            _context = context;
+            _conexion = new Conexion(configuration);
         }
 
-        // formulario de registro 
         public IActionResult Register()
         {
             return View();
         }
 
-        //  recibe los datos del formulario 
         [HttpPost]
-        public async Task<IActionResult> Register(Usuario usuario)
+        public IActionResult Register(Usuario usuario)
         {
-            // Asignamos un rol por defecto
             usuario.Rol = "Empleado";
-
-            // Guardamos el nuevo usuario en la base de datos
-            _context.Add(usuario);
-            await _context.SaveChangesAsync();
-
-            // Redirigimos al usuario a la página de login
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "INSERT INTO Usuarios (Nombre, Apellido, Email, Clave, Rol) VALUES (@Nombre, @Apellido, @Email, @Clave, @Rol)";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
+                    command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
+                    command.Parameters.AddWithValue("@Email", usuario.Email);
+                    command.Parameters.AddWithValue("@Clave", usuario.Clave); // ¡Recuerda encriptar esto en un proyecto real!
+                    command.Parameters.AddWithValue("@Rol", usuario.Rol);
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                }
+            }
             return RedirectToAction("Login");
         }
+
         public IActionResult Login()
         {
             return View();
         }
-        
+
         [HttpPost]
         public async Task<IActionResult> Login(string Email, string Clave)
         {
-    // Buscamos el usuario en la base de datos por su email
-    var usuario = await _context.Usuarios
-        .FirstOrDefaultAsync(u => u.Email == Email);
+            Usuario? usuario = null;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id, Nombre, Apellido, Email, Clave, Rol FROM Usuarios WHERE Email = @Email";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Email", Email);
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            usuario = new Usuario
+                            {
+                                Id = reader.GetInt32("Id"),
+                                Nombre = reader.GetString("Nombre"),
+                                Apellido = reader.GetString("Apellido"),
+                                Email = reader.GetString("Email"),
+                                Clave = reader.GetString("Clave"),
+                                Rol = reader.GetString("Rol")
+                            };
+                        }
+                    }
+                }
+            }
 
-    if (usuario == null || usuario.Clave != Clave)
-    {
-        // mensaje de error que la vista podrá mostrar
-        TempData["Error"] = "El email o la contraseña son incorrectos.";
-        return View();
-    }
+            if (usuario == null || usuario.Clave != Clave)
+            {
+                TempData["Error"] = "El email o la contraseña son incorrectos.";
+                return View();
+            }
 
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, usuario.Email),
+                new Claim("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
+                new Claim(ClaimTypes.Role, usuario.Rol),
+            };
 
-    var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, usuario.Email),
-        new Claim("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
-        new Claim(ClaimTypes.Role, usuario.Rol),
-    };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-    var claimsIdentity = new ClaimsIdentity(
-        claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity));
 
-    await HttpContext.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme, 
-        new ClaimsPrincipal(claimsIdentity));
+            return RedirectToAction("Index", "Home");
+        }
 
-    return RedirectToAction("Index", "Home");
-}
-    public async Task<IActionResult> Logout()
-{
-    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    return RedirectToAction("Index", "Home");
-}    
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Index", "Home");
+        }
+
+        [Authorize]
+        public IActionResult Perfil()
+        {
+            Usuario? usuario = null;
+            var userEmail = User.Identity.Name;
+
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id, Nombre, Apellido, Email, Avatar FROM Usuarios WHERE Email = @Email";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Email", userEmail);
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            usuario = new Usuario
+                            {
+                                Id = reader.GetInt32("Id"),
+                                Nombre = reader.GetString("Nombre"),
+                                Apellido = reader.GetString("Apellido"),
+                                Email = reader.GetString("Email"),
+                                Avatar = reader.IsDBNull("Avatar") ? null : reader.GetString("Avatar")
+                            };
+                        }
+                    }
+                }
+            }
+            if (usuario == null) return NotFound();
+            return View(usuario);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public IActionResult Perfil(Usuario usuario)
+        {
+            var userEmail = User.Identity.Name;
+            try
+            {
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido WHERE Email = @Email";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
+                        command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
+                        command.Parameters.AddWithValue("@Email", userEmail);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                TempData["Success"] = "Perfil actualizado correctamente.";
+                return RedirectToAction(nameof(Perfil));
+            }
+            catch
+            {
+                TempData["Error"] = "No se pudo actualizar el perfil.";
+                return View(usuario);
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        public IActionResult ActualizarAvatar(IFormFile avatar)
+        {
+            var userEmail = User.Identity.Name;
+            if (avatar != null && avatar.Length > 0)
+            {
+                var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars");
+                if (!Directory.Exists(uploadsDir))
+                {
+                    Directory.CreateDirectory(uploadsDir);
+                }
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(avatar.FileName);
+                var filePath = Path.Combine(uploadsDir, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    avatar.CopyTo(fileStream);
+                }
+
+                var avatarUrl = "/uploads/avatars/" + uniqueFileName;
+
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "UPDATE Usuarios SET Avatar = @Avatar WHERE Email = @Email";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Avatar", avatarUrl);
+                        command.Parameters.AddWithValue("@Email", userEmail);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            return RedirectToAction(nameof(Perfil));
+        }
     }
 }
