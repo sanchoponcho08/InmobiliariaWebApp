@@ -1,0 +1,36 @@
+@model IEnumerable<InmobiliariaWebApp.Models.Contrato>
+
+@{
+    ViewData["Title"] = "Contratos Vigentes";
+}
+
+<h1>Reporte: Contratos Vigentes</h1>
+<p>Listado de todos los contratos activos a la fecha de hoy.</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Inquilino</th>
+            <th>Inmueble (Direccion)</th>
+            <th>Dueño del Inmueble</th>
+            <th>Fecha de Inicio</th>
+            <th>Fecha de Finalizacion</th>
+            <th>Monto del Alquiler</th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>@item.Inquilino?.NombreCompleto</td>
+            <td>@item.Inmueble?.Direccion</td>
+            <td>@item.Inmueble?.Dueño?.NombreCompleto</td>
+            <td>@Html.DisplayFor(modelItem => item.FechaInicio)</td>
+            <td>@Html.DisplayFor(modelItem => item.FechaFin)</td>
+            <td>@Html.DisplayFor(modelItem => item.MontoAlquiler)</td>
+        </tr>
+}
+    </tbody>
+</table>
+<div>
+    <a asp-controller="Home" asp-action="Index">Volver al Inicio</a>
+</div>

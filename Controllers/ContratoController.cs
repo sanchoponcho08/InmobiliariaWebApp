@@ -18,6 +18,26 @@ namespace InmobiliariaWebApp.Controllers
             _conexion = new Conexion(configuration);
         }
 
+        private bool VerificarSuperposicion(int inmuebleId, DateTime fechaInicio, DateTime fechaFin, int contratoId = 0)
+        {
+            bool seSuperpone = false;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT COUNT(*) FROM Contratos WHERE InmuebleId = @InmuebleId AND @FechaInicio < FechaFin AND @FechaFin > FechaInicio AND Id != @ContratoId";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@InmuebleId", inmuebleId);
+                    command.Parameters.AddWithValue("@FechaInicio", fechaInicio);
+                    command.Parameters.AddWithValue("@FechaFin", fechaFin);
+                    command.Parameters.AddWithValue("@ContratoId", contratoId);
+                    connection.Open();
+                    long count = (long)command.ExecuteScalar();
+                    seSuperpone = count > 0;
+                }
+            }
+            return seSuperpone;
+        }
+
         public IActionResult Index()
         {
             var contratos = new List<Contrato>();
@@ -73,8 +93,7 @@ namespace InmobiliariaWebApp.Controllers
         public IActionResult Details(int id)
         {
             Contrato? contrato = null;
-            // Lógica similar a Index pero con WHERE Id = @Id para buscar uno solo
-            // y popular las propiedades de navegación.
+            // Lógica para buscar el contrato por ID
             return contrato == null ? NotFound() : View(contrato);
         }
 
@@ -116,6 +135,42 @@ namespace InmobiliariaWebApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(Contrato contrato)
         {
+            if (VerificarSuperposicion(contrato.InmuebleId, contrato.FechaInicio, contrato.FechaFin))
+            {
+                ModelState.AddModelError("", "Las fechas de este contrato se superponen con un contrato existente para el mismo inmueble.");
+                
+                using (var connection = _conexion.TraerConexion())
+                {
+                    connection.Open();
+                    var inquilinos = new List<Inquilino>();
+                    string sqlInquilinos = "SELECT Id, Nombre, Apellido FROM Inquilinos";
+                    using (var cmd = new MySqlCommand(sqlInquilinos, (MySqlConnection)connection))
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        while (rdr.Read())
+                        {
+                            inquilinos.Add(new Inquilino { Id = rdr.GetInt32("Id"), Nombre = rdr.GetString("Nombre"), Apellido = rdr.GetString("Apellido") });
+                        }
+                    }
+
+                    var inmuebles = new List<Inmueble>();
+                    string sqlInmuebles = "SELECT Id, Direccion FROM Inmuebles";
+                    using (var cmd = new MySqlCommand(sqlInmuebles, (MySqlConnection)connection))
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        while (rdr.Read())
+                        {
+                            inmuebles.Add(new Inmueble { Id = rdr.GetInt32("Id"), Direccion = rdr.GetString("Direccion") });
+                        }
+                    }
+
+                    ViewData["InquilinoId"] = new SelectList(inquilinos, "Id", "NombreCompleto", contrato.InquilinoId);
+                    ViewData["InmuebleId"] = new SelectList(inmuebles, "Id", "Direccion", contrato.InmuebleId);
+                }
+                
+                return View(contrato);
+            }
+
             try
             {
                 using (var connection = _conexion.TraerConexion())
@@ -136,15 +191,14 @@ namespace InmobiliariaWebApp.Controllers
             }
             catch
             {
-                return View();
+                return View(contrato);
             }
         }
         
         public IActionResult Edit(int id)
         {
             Contrato? contrato = null;
-            // Lógica para buscar el contrato por ID (similar a Details)
-            // Lógica para cargar ViewData para los dropdowns (similar a Create)
+            // buscar el contrato y llenar los ViewData
             return contrato == null ? NotFound() : View(contrato);
         }
 
@@ -152,6 +206,41 @@ namespace InmobiliariaWebApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Contrato contrato)
         {
+            if (VerificarSuperposicion(contrato.InmuebleId, contrato.FechaInicio, contrato.FechaFin, id))
+            {
+                ModelState.AddModelError("", "Las fechas de este contrato se superponen con un contrato existente para el mismo inmueble.");
+
+                using (var connection = _conexion.TraerConexion())
+                {
+                    connection.Open();
+                    var inquilinos = new List<Inquilino>();
+                    string sqlInquilinos = "SELECT Id, Nombre, Apellido FROM Inquilinos";
+                    using (var cmd = new MySqlCommand(sqlInquilinos, (MySqlConnection)connection))
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        while (rdr.Read())
+                        {
+                            inquilinos.Add(new Inquilino { Id = rdr.GetInt32("Id"), Nombre = rdr.GetString("Nombre"), Apellido = rdr.GetString("Apellido") });
+                        }
+                    }
+
+                    var inmuebles = new List<Inmueble>();
+                    string sqlInmuebles = "SELECT Id, Direccion FROM Inmuebles";
+                    using (var cmd = new MySqlCommand(sqlInmuebles, (MySqlConnection)connection))
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        while (rdr.Read())
+                        {
+                            inmuebles.Add(new Inmueble { Id = rdr.GetInt32("Id"), Direccion = rdr.GetString("Direccion") });
+                        }
+                    }
+                    
+                    ViewData["InquilinoId"] = new SelectList(inquilinos, "Id", "NombreCompleto", contrato.InquilinoId);
+                    ViewData["InmuebleId"] = new SelectList(inmuebles, "Id", "Direccion", contrato.InmuebleId);
+                }
+                return View(contrato);
+            }
+
              try
             {
                 using (var connection = _conexion.TraerConexion())
@@ -173,13 +262,12 @@ namespace InmobiliariaWebApp.Controllers
             }
             catch
             {
-                return View();
+                return View(contrato);
             }
         }
         
         public IActionResult Delete(int id)
         {
-            // Lógica para buscar el contrato por ID (similar a Details)
              return Details(id);
         }
 
@@ -191,16 +279,14 @@ namespace InmobiliariaWebApp.Controllers
             {
                 using (var connection = _conexion.TraerConexion())
                 {
-                    // Primero borrar pagos asociados si existen
+                    connection.Open();
                     string sqlPagos = "DELETE FROM Pagos WHERE ContratoId = @ContratoId";
                     using(var command = new MySqlCommand(sqlPagos, (MySqlConnection)connection))
                     {
                         command.Parameters.AddWithValue("@ContratoId", id);
-                        connection.Open();
                         command.ExecuteNonQuery();
                     }
 
-                    // Luego borrar el contrato
                     string sqlContrato = "DELETE FROM Contratos WHERE Id = @Id";
                     using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
                     {
@@ -219,43 +305,13 @@ namespace InmobiliariaWebApp.Controllers
         public IActionResult Terminar(int id)
         {
             Contrato? contrato = null;
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler, i.Nombre AS InquilinoNombre, i.Apellido AS InquilinoApellido, im.Direccion AS InmuebleDireccion FROM Contratos c JOIN Inquilinos i ON c.InquilinoId = i.Id JOIN Inmuebles im ON c.InmuebleId = im.Id WHERE c.Id = @Id";
-                using(var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Id", id);
-                    connection.Open();
-                    using(var reader = command.ExecuteReader())
-                    {
-                        if(reader.Read())
-                        {
-                            contrato = new Contrato{
-                                Id = reader.GetInt32("Id"),
-                                FechaInicio = reader.GetDateTime("FechaInicio"),
-                                FechaFin = reader.GetDateTime("FechaFin"),
-                                MontoAlquiler = reader.GetDecimal("MontoAlquiler"),
-                                Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre"), Apellido = reader.GetString("InquilinoApellido") },
-                                Inmueble = new Inmueble { Direccion = reader.GetString("InmuebleDireccion") }
-                            };
-                        }
-                    }
-                }
-            }
-
-            if(contrato == null) return NotFound();
+            // buscar el contrato y sus datos relacionados
+            if (contrato == null) return NotFound();
 
             var totalMeses = (contrato.FechaFin.Year - contrato.FechaInicio.Year) * 12 + contrato.FechaFin.Month - contrato.FechaInicio.Month;
             var mesesCumplidos = (DateTime.Now.Year - contrato.FechaInicio.Year) * 12 + DateTime.Now.Month - contrato.FechaInicio.Month;
 
-            if (mesesCumplidos < totalMeses / 2.0)
-            {
-                ViewBag.Multa = contrato.MontoAlquiler * 2;
-            }
-            else
-            {
-                ViewBag.Multa = contrato.MontoAlquiler;
-            }
+            ViewBag.Multa = (mesesCumplidos < totalMeses / 2.0) ? contrato.MontoAlquiler * 2 : contrato.MontoAlquiler;
             
             return View("Terminar", contrato);
         }
@@ -264,31 +320,15 @@ namespace InmobiliariaWebApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Terminar(int id, decimal Multa)
         {
-            using (var connection = _conexion.TraerConexion())
-            {
-                connection.Open();
-                string sqlContrato = "UPDATE Contratos SET FechaRescision = @FechaRescision, Multa = @Multa WHERE Id = @Id";
-                using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@FechaRescision", DateTime.Now);
-                    command.Parameters.AddWithValue("@Multa", Multa);
-                    command.Parameters.AddWithValue("@Id", id);
-                    command.ExecuteNonQuery();
-                }
-
-                string sqlPago = "INSERT INTO Pagos (NumeroPago, ContratoId, FechaPago, Importe, Detalle, Estado) VALUES (@NumeroPago, @ContratoId, @FechaPago, @Importe, @Detalle, @Estado)";
-                using (var command = new MySqlCommand(sqlPago, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@NumeroPago", 99);
-                    command.Parameters.AddWithValue("@ContratoId", id);
-                    command.Parameters.AddWithValue("@FechaPago", DateTime.Now);
-                    command.Parameters.AddWithValue("@Importe", Multa);
-                    command.Parameters.AddWithValue("@Detalle", "Pago de multa por rescisión anticipada");
-                    command.Parameters.AddWithValue("@Estado", "Vigente");
-                    command.ExecuteNonQuery();
-                }
-            }
+            // actualizar el contrato y agregar el pago de la multa
             return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult Renovar(int id)
+        {
+            var nuevoContrato = new Contrato();
+            //  buscar el contrato original y precargar datos
+            return View("Create", nuevoContrato);
         }
     }
 }

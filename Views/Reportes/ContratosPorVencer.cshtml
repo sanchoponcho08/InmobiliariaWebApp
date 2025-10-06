@@ -1,0 +1,57 @@
+@model IEnumerable<InmobiliariaWebApp.Models.Contrato>
+
+@{
+    ViewData["Title"] = "Contratos por Vencer";
+}
+
+<h1>Reporte: Contratos por Vencer</h1>
+<p>Listado de contratos que finalizan en un plazo determinado.</p>
+
+<form asp-action="ContratosPorVencer" method="get">
+    <div class="row align-items-end">
+        <div class="form-group col-md-3">
+            <label for="dias" class="control-label">Seleccionar Plazo (días):</label>
+            <select name="dias" class="form-control" onchange="this.form.submit()">
+                <option value="30" selected="@(ViewBag.Dias == 30)">Últimos 30 días</option>
+                <option value="60" selected="@(ViewBag.Dias == 60)">Últimos 60 días</option>
+                <option value="90" selected="@(ViewBag.Dias == 90)">Últimos 90 días</option>
+            </select>
+        </div>
+    </div>
+</form>
+<hr />
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Inquilino</th>
+            <th>Inmueble (Dirección)</th>
+            <th>Fecha de Inicio</th>
+            <th>Fecha de Finalización</th>
+            <th>Monto del Alquiler</th>
+        </tr>
+    </thead>
+    <tbody>
+@if (Model.Any())
+{
+    @foreach (var item in Model) {
+            <tr>
+                <td>@item.Inquilino?.NombreCompleto</td>
+                <td>@item.Inmueble?.Direccion</td>
+                <td>@Html.DisplayFor(modelItem => item.FechaInicio)</td>
+                <td>@Html.DisplayFor(modelItem => item.FechaFin)</td>
+                <td>@Html.DisplayFor(modelItem => item.MontoAlquiler)</td>
+            </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="5">No hay contratos que venzan en el plazo seleccionado.</td>
+    </tr>
+}
+    </tbody>
+</table>
+<div>
+    <a asp-controller="Home" asp-action="Index">Volver al Inicio</a>
+</div>
