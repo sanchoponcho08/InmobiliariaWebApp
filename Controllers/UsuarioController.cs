@@ -207,5 +207,83 @@ namespace InmobiliariaWebApp.Controllers
             }
             return RedirectToAction(nameof(Perfil));
         }
+        [Authorize]
+        [HttpPost]
+        public IActionResult CambiarPassword(string claveActual, string claveNueva, string confirmarClave)
+        {
+            var userEmail = User.Identity.Name;
+            Usuario? usuario = null;
+
+            if (string.IsNullOrEmpty(claveNueva) || claveNueva != confirmarClave)
+            {
+                TempData["Error"] = "La nueva contraseña no coincide con su confirmación.";
+                return RedirectToAction(nameof(Perfil));
+            }
+
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Clave FROM Usuarios WHERE Email = @Email";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Email", userEmail);
+                    connection.Open();
+                    var storedPassword = command.ExecuteScalar() as string;
+
+                    if (storedPassword != claveActual)
+                    {
+                        TempData["Error"] = "La contraseña actual es incorrecta.";
+                        return RedirectToAction(nameof(Perfil));
+                    }
+                }
+            }
+
+            try
+            {
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "UPDATE Usuarios SET Clave = @ClaveNueva WHERE Email = @Email";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@ClaveNueva", claveNueva);
+                        command.Parameters.AddWithValue("@Email", userEmail);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                TempData["Success"] = "Contraseña actualizada correctamente.";
+            }
+            catch
+            {
+                TempData["Error"] = "No se pudo actualizar la contraseña.";
+            }
+
+            return RedirectToAction(nameof(Perfil));
+        }
+        
+        [Authorize]
+        [HttpPost]
+        public IActionResult QuitarAvatar()
+        {
+            var userEmail = User.Identity.Name;
+            try
+            {
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "UPDATE Usuarios SET Avatar = NULL WHERE Email = @Email";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@Email", userEmail);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+                TempData["Success"] = "Foto de perfil eliminada.";
+            }
+            catch
+            {
+                TempData["Error"] = "No se pudo eliminar la foto de perfil.";
+            }
+            return RedirectToAction(nameof(Perfil));
+        }
     }
 }
