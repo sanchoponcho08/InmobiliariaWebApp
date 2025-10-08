@@ -18,14 +18,14 @@
         <dt class = "col-sm-3">Dueño del Inmueble</dt>
         <dd class = "col-sm-9">@Model.Inmueble?.Dueño?.NombreCompleto</dd>
         
-        <dt class = "col-sm-3">Fecha de Inicio</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.FechaInicio)</dd>
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.FechaInicio)</dt>
+        <dd class = "col-sm-9">@Model.FechaInicio.ToShortDateString()</dd>
         
-        <dt class = "col-sm-3">Fecha de Finalización</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.FechaFin)</dd>
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.FechaFin)</dt>
+        <dd class = "col-sm-9">@Model.FechaFin.ToShortDateString()</dd>
         
-        <dt class = "col-sm-3">Monto del Alquiler</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.MontoAlquiler)</dd>
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.MontoAlquiler)</dt>
+        <dd class = "col-sm-9">@Model.MontoAlquiler.ToString("C")</dd>
     </dl>
 
     @if (User.IsInRole("Administrador") && Model.Creador != null)

@@ -18,6 +18,22 @@ namespace InmobiliariaWebApp.Controllers
             _conexion = new Conexion(configuration);
         }
 
+         private int ObtenerUsuarioIdActual()
+        {
+            var email = User.Identity.Name;
+            using (var connection = _conexion.TraerConexion())
+            {
+                string sql = "SELECT Id FROM Usuarios WHERE Email = @Email";
+                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                {
+                    command.Parameters.AddWithValue("@Email", email);
+                    connection.Open();
+                    var id = command.ExecuteScalar();
+                    return id != null ? Convert.ToInt32(id) : 0;
+                }
+            }
+        }
+
         private bool VerificarSuperposicion(int inmuebleId, DateTime fechaInicio, DateTime fechaFin, int contratoId = 0)
         {
             bool seSuperpone = false;
@@ -99,11 +115,13 @@ namespace InmobiliariaWebApp.Controllers
                     SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler,
                         i.Nombre AS InquilinoNombre, i.Apellido AS InquilinoApellido,
                         im.Direccion AS InmuebleDireccion,
-                        p.Nombre AS PropietarioNombre, p.Apellido AS PropietarioApellido
+                        p.Nombre AS PropietarioNombre, p.Apellido AS PropietarioApellido,
+                        u.Nombre AS CreadorNombre, u.Apellido AS CreadorApellido
                     FROM Contratos c
                     LEFT JOIN Inquilinos i ON c.InquilinoId = i.Id
                     LEFT JOIN Inmuebles im ON c.InmuebleId = im.Id
                     LEFT JOIN Propietarios p ON im.PropietarioId = p.Id
+                    LEFT JOIN Usuarios u ON c.UsuarioIdCreador = u.Id
                     WHERE c.Id = @Id";
                 
                 using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
@@ -125,7 +143,10 @@ namespace InmobiliariaWebApp.Controllers
                                 {
                                     Direccion = reader.GetString("InmuebleDireccion"),
                                     Dueño = new Propietario { Nombre = reader.GetString("PropietarioNombre"), Apellido = reader.GetString("PropietarioApellido") }
-                                }
+                                },
+                                
+                                UsuarioIdCreador = reader.IsDBNull("CreadorNombre") ? (int?)null : -1, // Solo para saber si existe
+                                Creador = reader.IsDBNull("CreadorNombre") ? null : new Usuario { Nombre = reader.GetString("CreadorNombre"), Apellido = reader.GetString("CreadorApellido") }
                             };
                         }
                     }
@@ -233,95 +254,20 @@ namespace InmobiliariaWebApp.Controllers
         }
 
         public IActionResult Edit(int id)
-            {
-                Contrato? contrato = null;
-                using (var connection = _conexion.TraerConexion())
-                {
-                    connection.Open();
-                    string sqlContrato = "SELECT Id, InquilinoId, InmuebleId, FechaInicio, FechaFin, MontoAlquiler FROM Contratos WHERE Id = @Id";
-                    using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Id", id);
-                        using(var reader = command.ExecuteReader())
-                        {
-                            if(reader.Read())
-                            {
-                                contrato = new Contrato
-                                {
-                                    Id = reader.GetInt32("Id"),
-                                    InquilinoId = reader.GetInt32("InquilinoId"),
-                                    InmuebleId = reader.GetInt32("InmuebleId"),
-                                    FechaInicio = reader.GetDateTime("FechaInicio"),
-                                    FechaFin = reader.GetDateTime("FechaFin"),
-                                    MontoAlquiler = reader.GetDecimal("MontoAlquiler")
-                                };
-                            }
-                        }
-                    }
-
-                    if (contrato == null) return NotFound();
-
-                    var inquilinos = new List<Inquilino>();
-                    string sqlInquilinos = "SELECT Id, Nombre, Apellido FROM Inquilinos";
-                    using (var command = new MySqlCommand(sqlInquilinos, (MySqlConnection)connection))
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read()) inquilinos.Add(new Inquilino { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") });
-                    }
-
-                    var inmuebles = new List<Inmueble>();
-                    string sqlInmuebles = "SELECT Id, Direccion FROM Inmuebles";
-                    using (var command = new MySqlCommand(sqlInmuebles, (MySqlConnection)connection))
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read()) inmuebles.Add(new Inmueble { Id = reader.GetInt32("Id"), Direccion = reader.GetString("Direccion") });
-                    }
-                    
-                    ViewData["InquilinoId"] = new SelectList(inquilinos, "Id", "NombreCompleto", contrato.InquilinoId);
-                    ViewData["InmuebleId"] = new SelectList(inmuebles, "Id", "Direccion", contrato.InmuebleId);
-                }
-                return View(contrato);
-            }
+        {
+            Contrato? contrato = null;
+            return contrato == null ? NotFound() : View(contrato);
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Contrato contrato)
         {
-            if (VerificarSuperposicion(contrato.InmuebleId, contrato.FechaInicio, contrato.FechaFin, id))
+             if (VerificarSuperposicion(contrato.InmuebleId, contrato.FechaInicio, contrato.FechaFin, id))
             {
-                ModelState.AddModelError("", "Las fechas de este contrato se superponen con un contrato existente para el mismo inmueble.");
-
-                using (var connection = _conexion.TraerConexion())
-                {
-                    connection.Open();
-                    var inquilinos = new List<Inquilino>();
-                    string sqlInquilinos = "SELECT Id, Nombre, Apellido FROM Inquilinos";
-                    using (var cmd = new MySqlCommand(sqlInquilinos, (MySqlConnection)connection))
-                    using (var rdr = cmd.ExecuteReader())
-                    {
-                        while (rdr.Read())
-                        {
-                            inquilinos.Add(new Inquilino { Id = rdr.GetInt32("Id"), Nombre = rdr.GetString("Nombre"), Apellido = rdr.GetString("Apellido") });
-                        }
-                    }
-
-                    var inmuebles = new List<Inmueble>();
-                    string sqlInmuebles = "SELECT Id, Direccion FROM Inmuebles";
-                    using (var cmd = new MySqlCommand(sqlInmuebles, (MySqlConnection)connection))
-                    using (var rdr = cmd.ExecuteReader())
-                    {
-                        while (rdr.Read())
-                        {
-                            inmuebles.Add(new Inmueble { Id = rdr.GetInt32("Id"), Direccion = rdr.GetString("Direccion") });
-                        }
-                    }
-
-                    ViewData["InquilinoId"] = new SelectList(inquilinos, "Id", "NombreCompleto", contrato.InquilinoId);
-                    ViewData["InmuebleId"] = new SelectList(inmuebles, "Id", "Direccion", contrato.InmuebleId);
-                }
+                ModelState.AddModelError("", "Las fechas se superponen con un contrato existente para el mismo inmueble.");
                 return View(contrato);
             }
-
             try
             {
                 using (var connection = _conexion.TraerConexion())
@@ -341,38 +287,13 @@ namespace InmobiliariaWebApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View(contrato);
-            }
+            catch { return View(contrato); }
         }
-
+        
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
-            Contrato? contrato = null;
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "SELECT c.Id, i.Nombre, i.Apellido, im.Direccion FROM Contratos c JOIN Inquilinos i ON c.InquilinoId = i.Id JOIN Inmuebles im ON c.InmuebleId = im.Id WHERE c.Id = @Id";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Id", id);
-                    connection.Open();
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            contrato = new Contrato
-                            {
-                                Id = reader.GetInt32("Id"),
-                                Inquilino = new Inquilino { Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") },
-                                Inmueble = new Inmueble { Direccion = reader.GetString("Direccion") }
-                            };
-                        }
-                    }
-                }
-            }
-            return contrato == null ? NotFound() : View(contrato);
+            return Details(id);
         }
 
         [HttpPost, ActionName("Delete")]
@@ -386,12 +307,11 @@ namespace InmobiliariaWebApp.Controllers
                 {
                     connection.Open();
                     string sqlPagos = "DELETE FROM Pagos WHERE ContratoId = @ContratoId";
-                    using (var command = new MySqlCommand(sqlPagos, (MySqlConnection)connection))
+                    using(var command = new MySqlCommand(sqlPagos, (MySqlConnection)connection))
                     {
                         command.Parameters.AddWithValue("@ContratoId", id);
                         command.ExecuteNonQuery();
                     }
-
                     string sqlContrato = "DELETE FROM Contratos WHERE Id = @Id";
                     using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
                     {
@@ -405,130 +325,47 @@ namespace InmobiliariaWebApp.Controllers
         }
 
         public IActionResult Terminar(int id)
+        {
+            return View("Terminar", new Contrato());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Terminar(int id, decimal Multa)
+        {
+             using (var connection = _conexion.TraerConexion())
             {
-                Contrato? contrato = null;
-                using (var connection = _conexion.TraerConexion())
+                connection.Open();
+                string sqlContrato = "UPDATE Contratos SET FechaRescision = @FechaRescision, Multa = @Multa, UsuarioIdTerminador = @UsuarioIdTerminador WHERE Id = @Id";
+                using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
                 {
-                    string sql = "SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler, i.Nombre AS InquilinoNombre, i.Apellido AS InquilinoApellido, im.Direccion AS InmuebleDireccion FROM Contratos c JOIN Inquilinos i ON c.InquilinoId = i.Id JOIN Inmuebles im ON c.InmuebleId = im.Id WHERE c.Id = @Id";
-                    using(var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Id", id);
-                        connection.Open();
-                        using(var reader = command.ExecuteReader())
-                        {
-                            if(reader.Read())
-                            {
-                                contrato = new Contrato{
-                                    Id = reader.GetInt32("Id"),
-                                    FechaInicio = reader.GetDateTime("FechaInicio"),
-                                    FechaFin = reader.GetDateTime("FechaFin"),
-                                    MontoAlquiler = reader.GetDecimal("MontoAlquiler"),
-                                    Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre"), Apellido = reader.GetString("InquilinoApellido") },
-                                    Inmueble = new Inmueble { Direccion = reader.GetString("InmuebleDireccion") }
-                                };
-                            }
-                        }
-                    }
+                    command.Parameters.AddWithValue("@FechaRescision", DateTime.Now);
+                    command.Parameters.AddWithValue("@Multa", Multa);
+                    command.Parameters.AddWithValue("@UsuarioIdTerminador", ObtenerUsuarioIdActual());
+                    command.Parameters.AddWithValue("@Id", id);
+                    command.ExecuteNonQuery();
                 }
 
-                if (contrato == null) return NotFound();
-
-                var totalMeses = (contrato.FechaFin.Year - contrato.FechaInicio.Year) * 12 + contrato.FechaFin.Month - contrato.FechaInicio.Month;
-                var mesesCumplidos = (DateTime.Now.Year - contrato.FechaInicio.Year) * 12 + DateTime.Now.Month - contrato.FechaInicio.Month;
-
-                ViewBag.Multa = (mesesCumplidos < totalMeses / 2.0) ? contrato.MontoAlquiler * 2 : contrato.MontoAlquiler;
-                
-                return View("Terminar", contrato);
-            }
-
-            [HttpPost]
-            [ValidateAntiForgeryToken]
-            public IActionResult Terminar(int id, decimal Multa)
-            {
-                using (var connection = _conexion.TraerConexion())
+                string sqlPago = "INSERT INTO Pagos (NumeroPago, ContratoId, FechaPago, Importe, Detalle, Estado, UsuarioIdCreador) VALUES (@NumeroPago, @ContratoId, @FechaPago, @Importe, @Detalle, @Estado, @UsuarioIdCreador)";
+                using (var command = new MySqlCommand(sqlPago, (MySqlConnection)connection))
                 {
-                    connection.Open();
-                    string sqlContrato = "UPDATE Contratos SET FechaRescision = @FechaRescision, Multa = @Multa WHERE Id = @Id";
-                    using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@FechaRescision", DateTime.Now);
-                        command.Parameters.AddWithValue("@Multa", Multa);
-                        command.Parameters.AddWithValue("@Id", id);
-                        command.ExecuteNonQuery();
-                    }
-
-                    string sqlPago = "INSERT INTO Pagos (NumeroPago, ContratoId, FechaPago, Importe, Detalle, Estado) VALUES (@NumeroPago, @ContratoId, @FechaPago, @Importe, @Detalle, @Estado)";
-                    using (var command = new MySqlCommand(sqlPago, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@NumeroPago", 99);
-                        command.Parameters.AddWithValue("@ContratoId", id);
-                        command.Parameters.AddWithValue("@FechaPago", DateTime.Now);
-                        command.Parameters.AddWithValue("@Importe", Multa);
-                        command.Parameters.AddWithValue("@Detalle", "Pago de multa por rescisión anticipada");
-                        command.Parameters.AddWithValue("@Estado", "Vigente");
-                        command.ExecuteNonQuery();
-                    }
+                    command.Parameters.AddWithValue("@NumeroPago", 99);
+                    command.Parameters.AddWithValue("@ContratoId", id);
+                    command.Parameters.AddWithValue("@FechaPago", DateTime.Now);
+                    command.Parameters.AddWithValue("@Importe", Multa);
+                    command.Parameters.AddWithValue("@Detalle", "Pago de multa por rescisión anticipada");
+                    command.Parameters.AddWithValue("@Estado", "Vigente");
+                    command.Parameters.AddWithValue("@UsuarioIdCreador", ObtenerUsuarioIdActual());
+                    command.ExecuteNonQuery();
                 }
-                return RedirectToAction(nameof(Index));
             }
+            return RedirectToAction(nameof(Index));
+        }
 
         public IActionResult Renovar(int id)
-            {
-                var nuevoContrato = new Contrato();
-                using (var connection = _conexion.TraerConexion())
-                {
-                    connection.Open();
-
-                    string sqlContratoOriginal = "SELECT InquilinoId, InmuebleId FROM Contratos WHERE Id = @Id";
-                    using (var command = new MySqlCommand(sqlContratoOriginal, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Id", id);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                nuevoContrato.InquilinoId = reader.GetInt32("InquilinoId");
-                                nuevoContrato.InmuebleId = reader.GetInt32("InmuebleId");
-                            }
-                        }
-                    }
-
-                    var inquilinos = new List<Inquilino>();
-                    string sqlInquilinos = "SELECT Id, Nombre, Apellido FROM Inquilinos";
-                    using (var command = new MySqlCommand(sqlInquilinos, (MySqlConnection)connection))
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read()) inquilinos.Add(new Inquilino { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") });
-                    }
-
-                    var inmuebles = new List<Inmueble>();
-                    string sqlInmuebles = "SELECT Id, Direccion FROM Inmuebles";
-                    using (var command = new MySqlCommand(sqlInmuebles, (MySqlConnection)connection))
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read()) inmuebles.Add(new Inmueble { Id = reader.GetInt32("Id"), Direccion = reader.GetString("Direccion") });
-                    }
-
-                    ViewData["InquilinoId"] = new SelectList(inquilinos, "Id", "NombreCompleto", nuevoContrato.InquilinoId);
-                    ViewData["InmuebleId"] = new SelectList(inmuebles, "Id", "Direccion", nuevoContrato.InmuebleId);
-                }
-                return View("Create", nuevoContrato);
-            }
-        
-        private int ObtenerUsuarioIdActual()
         {
-            var email = User.Identity.Name;
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "SELECT Id FROM Usuarios WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Email", email);
-                    connection.Open();
-                    var id = command.ExecuteScalar();
-                    return id != null ? Convert.ToInt32(id) : 0;
-                }
-            }
+            var nuevoContrato = new Contrato();
+            return View("Create", nuevoContrato);
         }
     }
 }
