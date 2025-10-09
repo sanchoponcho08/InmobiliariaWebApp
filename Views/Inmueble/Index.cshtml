@@ -1,15 +1,15 @@
 @model IEnumerable<InmobiliariaWebApp.Models.Inmueble>
 
 @{
-    ViewData["Title"] = "Inmuebles";
+    ViewData["Title"] = "Listado de Inmuebles";
 }
 
-<h1>Listado de Inmuebles</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-action="Create" class="btn btn-create">Cargar Nuevo Inmueble</a>
+</div>
 
-<p>
-    <a asp-action="Create" class="btn btn-success">Cargar Nuevo Inmueble</a>
-</p>
-<table class="table">
+<table class="table table-hover">
     <thead>
         <tr>
             <th>@Html.DisplayNameFor(model => model.Direccion)</th>
@@ -17,7 +17,7 @@
             <th>Tipo</th>
             <th>Ambientes</th>
             <th>@Html.DisplayNameFor(model => model.Precio)</th>
-            <th>@Html.DisplayNameFor(model => model.Disponible)</th>
+            <th class="text-center">@Html.DisplayNameFor(model => model.Disponible)</th>
             <th>Dueño</th>
             <th>Acciones</th>
         </tr>
@@ -29,12 +29,22 @@
             <td>@Html.DisplayFor(modelItem => item.Uso)</td>
             <td>@(item.Tipo?.Nombre)</td>
             <td>@Html.DisplayFor(modelItem => item.Ambientes)</td>
-            <td>@Html.DisplayFor(modelItem => item.Precio)</td>
-            <td>@(item.Disponible ? "Sí" : "No")</td>
+            <td>@String.Format("{0:C}", item.Precio)</td>
+            <td class="text-center">
+                @if(item.Disponible)
+                {
+                    <span class="badge bg-success">Sí</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">No</span>
+                }
+            </td>
             <td>@(item.Dueño?.Nombre) @(item.Dueño?.Apellido)</td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Eliminar</a>
+            <td class="action-buttons">
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-edit btn-sm">Editar</a>
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-details btn-sm">Detalles</a>
+                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-delete btn-sm">Eliminar</a>
             </td>
         </tr>
 }

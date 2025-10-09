@@ -1,21 +1,19 @@
 @model IEnumerable<InmobiliariaWebApp.Models.Contrato>
 
 @{
-    ViewData["Title"] = "Contratos";
+    ViewData["Title"] = "Listado de Contratos";
 }
 
-<h1>Listado de Contratos</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-action="Create" class="btn btn-create">Crear Nuevo Contrato</a>
+</div>
 
-<p>
-    <a asp-action="Create" class="btn btn-success">Crear Nuevo Contrato</a>
-</p>
-
-<table class="table">
+<table class="table table-hover">
     <thead>
         <tr>
             <th>Inquilino</th>
-            <th>Inmueble (Dirección)</th>
-            <th>Dueño del Inmueble</th>
+            <th>Inmueble</th>
             <th>@Html.DisplayNameFor(model => model.FechaInicio)</th>
             <th>@Html.DisplayNameFor(model => model.FechaFin)</th>
             <th>@Html.DisplayNameFor(model => model.MontoAlquiler)</th>
@@ -27,19 +25,17 @@
         <tr>
             <td>@item.Inquilino?.NombreCompleto</td>
             <td>@item.Inmueble?.Direccion</td>
-            <td>@item.Inmueble?.Dueño?.NombreCompleto</td>
-            <td>@Html.DisplayFor(modelItem => item.FechaInicio)</td>
-            <td>@Html.DisplayFor(modelItem => item.FechaFin)</td>
-            <td>@Html.DisplayFor(modelItem => item.MontoAlquiler)</td>
-            <td>
-                 <a asp-action="Renovar" asp-route-id="@item.Id" class="btn btn-success btn-sm">Renovar</a> |
-                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a> |
-                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a> |
-                <a asp-controller="Pago" asp-action="Index" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Pagos</a> |
-                <a asp-action="Terminar" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Terminar Contrato</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-secondary btn-sm">Eliminar</a>
+            <td>@item.FechaInicio.ToShortDateString()</td>
+            <td>@item.FechaFin.ToShortDateString()</td>
+            <td>@String.Format("{0:C}", item.MontoAlquiler)</td>
+            <td class="action-buttons">
+                 <a asp-action="Renovar" asp-route-id="@item.Id" class="btn btn-create btn-sm">Renovar</a>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-edit btn-sm">Editar</a>
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-details btn-sm">Detalles</a>
+                <a asp-controller="Pago" asp-action="Index" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Pagos</a>
+                <a asp-action="Terminar" asp-route-id="@item.Id" class="btn btn-delete btn-sm">Terminar</a>
+                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-sm">Eliminar</a>
             </td>
-            
         </tr>
     }
     </tbody>
