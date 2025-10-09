@@ -2,94 +2,37 @@
     ViewData["Title"] = "Página de Inicio";
 }
 
-<style>
-    .hero-section {
-        position: relative;
-        height: 80vh;
-        background-image: url('https://images.unsplash.com/photo-1599946485895-6285a70321a4?q=80&w=2070&auto=format&fit=crop');
-        background-size: cover;
-        background-position: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-    }
+<div class="text-center">
+    <h1 class="display-4">Bienvenido a InmobiliariaWebApp</h1>
+    <p>Tu solución completa para la gestión inmobiliaria.</p>
+</div>
 
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    .search-container {
-        position: relative;
-        z-index: 2;
-        background-color: rgba(1, 23, 43, 0.8); 
-        padding: 40px;
-        border-radius: 10px;
-        width: 80%;
-        max-width: 800px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .search-container h1 {
-        margin-bottom: 30px;
-        font-weight: 300;
-        font-size: 2.5rem;
-        text-align: center;
-    }
-
-    .search-form .form-control {
-        background-color: #fff;
-        border: 1px solid #ddd;
-        color: #333;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 15px;
-    }
-
-    .search-form .btn-primary {
-        background-color: #00bcd4; 
-        border: none;
-        padding: 15px;
-        width: 100%;
-        font-size: 1.2rem;
-        border-radius: 5px;
-        transition: background-color 0.3s;
-    }
-
-    .search-form .btn-primary:hover {
-        background-color: #0097a7;
-    }
-
-</style>
-
-<div class="hero-section">
-    <div class="hero-overlay"></div>
-    <div class="search-container">
-        <h1>Encuentra la propiedad de tus sueños en Merlo</h1>
-        <form class="search-form row">
-            <div class="col-md-4">
-                <select class="form-control">
-                    <option>Tipo de Propiedad</option>
-                    <option>Casa</option>
-                    <option>Departamento</option>
-                    <option>Terreno</option>
-                </select>
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Gestión de Inquilinos</h5>
+                <p class="card-text">Administra la información de todos tus inquilinos de forma centralizada.</p>
+                <a asp-controller="Inquilino" asp-action="Index" class="btn btn-primary">Ir a Inquilinos</a>
             </div>
-            <div class="col-md-4">
-                <select class="form-control">
-                    <option>Operación</option>
-                    <option>Alquiler</option>
-                    <option>Venta</option>
-                </select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Gestión de Propietarios</h5>
+                <p class="card-text">Mantén al día los datos y propiedades de cada propietario.</p>
+                <a asp-controller="Propietario" asp-action="Index" class="btn btn-primary">Ir a Propietarios</a>
             </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Gestión de Inmuebles</h5>
+                <p class="card-text">Consulta y actualiza el catálogo de inmuebles disponibles.</p>
+                <a asp-controller="Inmueble" asp-action="Index" class="btn btn-primary">Ir a Inmuebles</a>
             </div>
-        </form>
+        </div>
     </div>
 </div>

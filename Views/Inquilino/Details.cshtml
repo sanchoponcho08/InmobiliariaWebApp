@@ -1,0 +1,30 @@
+@model InmobiliariaWebApp.Models.Inquilino
+
+@{
+    ViewData["Title"] = "Detalles del Inquilino";
+}
+
+<div class="container">
+    <h1 class="display-4">Detalles del Inquilino</h1>
+
+    <div>
+        <h4>Inquilino</h4>
+        <hr />
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@Model.Nombre @Model.Apellido</h5>
+                        <p class="card-text"><strong>DNI:</strong> @Model.Dni</p>
+                        <p class="card-text"><strong>Teléfono:</strong> @Model.Telefono</p>
+                        <p class="card-text"><strong>Email:</strong> @Model.Email</p>
+                    </div>
+                    <div class="card-footer">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar</a>
+                        <a asp-action="Index" class="btn btn-secondary">Volver a la Lista</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
