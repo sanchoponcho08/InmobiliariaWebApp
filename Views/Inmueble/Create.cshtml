@@ -4,56 +4,88 @@
     ViewData["Title"] = "Cargar Inmueble";
 }
 
-<h1>Cargar Nuevo Inmueble</h1>
-<hr />
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            
-            <div class="form-group">
-                <label asp-for="PropietarioId" class="control-label"></label>
-                <select asp-for="PropietarioId" class ="form-control" asp-items="ViewBag.PropietarioId">
-                    <option value="">-- Seleccionar Propietario --</option>
-                </select>
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header text-white">
+                <h3 class="card-title">Cargar Nuevo Inmueble</h3>
             </div>
-            <div class="form-group">
-                <label asp-for="TipoInmuebleId" class="control-label"></label>
-                <select asp-for="TipoInmuebleId" class ="form-control" asp-items="ViewBag.TipoInmuebleId">
-                    <option value="">-- Seleccionar Tipo --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label asp-for="Direccion" class="control-label"></label>
-                <input asp-for="Direccion" class="form-control" />
-            </div>
-            <div class="form-group">
-                <label asp-for="Uso" class="control-label"></label>
-                <input asp-for="Uso" class="form-control" />
-            </div>
-            <div class="form-group">
-                <label asp-for="Ambientes" class="control-label"></label>
-                <input asp-for="Ambientes" class="form-control" />
-            </div>
-            <div class="form-group">
-                <label asp-for="Precio" class="control-label"></label>
-                <input asp-for="Precio" class="form-control" />
-            </div>
-            <div class="form-group">
-                <label asp-for="Coordenadas" class="control-label"></label>
-                <input asp-for="Coordenadas" class="form-control" />
-            </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Disponible" /> @Html.DisplayNameFor(model => model.Disponible)
-                </label>
-            </div>
-            
-            <br/>
-            <div class="form-group">
-                <input type="submit" value="Crear" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>
-            </div>
-        </form>
+            <form asp-action="Create">
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label asp-for="PropietarioId" class="control-label"></label>
+                                <select asp-for="PropietarioId" class="form-control" asp-items="ViewBag.PropietarioId">
+                                    <option value="">-- Seleccionar Propietario --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label asp-for="TipoInmuebleId" class="control-label"></label>
+                                <select asp-for="TipoInmuebleId" class="form-control" asp-items="ViewBag.TipoInmuebleId">
+                                    <option value="">-- Seleccionar Tipo --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label asp-for="Direccion" class="control-label"></label>
+                                <input asp-for="Direccion" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label asp-for="Uso" class="control-label"></label>
+                                <input asp-for="Uso" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label asp-for="Ambientes" class="control-label"></label>
+                                <input asp-for="Ambientes" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label asp-for="Precio" class="control-label"></label>
+                                <input asp-for="Precio" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group">
+                                <label asp-for="Coordenadas" class="control-label"></label>
+                                <input asp-for="Coordenadas" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex align-items-center">
+                            <div class="form-group form-check">
+                                <label class="form-check-label">
+                                    <input class="form-check-input" asp-for="Disponible" /> @Html.DisplayNameFor(model => model.Disponible)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="form-group">
+                        <input type="submit" value="Crear" class="btn btn-create" />
+                        <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
