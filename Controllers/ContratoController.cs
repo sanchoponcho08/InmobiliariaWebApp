@@ -245,10 +245,12 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Contrato creado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
+                TempData["Error"] = "Ocurrió un error al crear el contrato.";
                 return View(contrato);
             }
         }
@@ -285,9 +287,14 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Contrato actualizado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
-            catch { return View(contrato); }
+            catch
+            {
+                TempData["Error"] = "Ocurrió un error al actualizar el contrato.";
+                return View(contrato);
+            }
         }
         
         [Authorize(Roles = "Administrador")]
@@ -307,7 +314,7 @@ namespace InmobiliariaWebApp.Controllers
                 {
                     connection.Open();
                     string sqlPagos = "DELETE FROM Pagos WHERE ContratoId = @ContratoId";
-                    using(var command = new MySqlCommand(sqlPagos, (MySqlConnection)connection))
+                    using (var command = new MySqlCommand(sqlPagos, (MySqlConnection)connection))
                     {
                         command.Parameters.AddWithValue("@ContratoId", id);
                         command.ExecuteNonQuery();
@@ -319,9 +326,14 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Contrato y sus pagos asociados han sido eliminados exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
-            catch { return View(); }
+            catch
+            {
+                 TempData["Error"] = "Ocurrió un error al eliminar el contrato.";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         public IActionResult Terminar(int id)

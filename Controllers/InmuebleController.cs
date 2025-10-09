@@ -141,11 +141,13 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Inmueble creado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                TempData["Error"] = "Ocurrió un error al crear el inmueble.";
+                return View(inmueble);
             }
         }
 
@@ -234,11 +236,13 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Inmueble actualizado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                TempData["Error"] = "Ocurrió un error al actualizar el inmueble.";
+                return View(inmueble);
             }
         }
         
@@ -298,11 +302,13 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Inmueble eliminado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                TempData["Error"] = "Ocurrió un error al eliminar el inmueble. Es posible que esté asociado a un contrato.";
+                return RedirectToAction(nameof(Index));
             }
         }
     }

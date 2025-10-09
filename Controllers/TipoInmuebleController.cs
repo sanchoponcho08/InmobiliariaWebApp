@@ -89,11 +89,13 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Tipo de inmueble creado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                TempData["Error"] = "Ocurrió un error al crear el tipo de inmueble.";
+                return View(tipoInmueble);
             }
         }
 
@@ -119,11 +121,13 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                 TempData["Success"] = "Tipo de inmueble actualizado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                 TempData["Error"] = "Ocurrió un error al actualizar el tipo de inmueble.";
+                return View(tipoInmueble);
             }
         }
 
@@ -148,11 +152,13 @@ namespace InmobiliariaWebApp.Controllers
                         command.ExecuteNonQuery();
                     }
                 }
+                TempData["Success"] = "Tipo de inmueble eliminado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                TempData["Error"] = "Ocurrió un error al eliminar el tipo de inmueble.";
+                return RedirectToAction(nameof(Index));
             }
         }
     }
