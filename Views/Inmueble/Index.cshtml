@@ -8,20 +8,20 @@
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
             <h3 class="card-title">@ViewData["Title"]</h3>
-            <a asp-action="Create" class="btn btn-create">Cargar Nuevo Inmueble</a>
+            <a asp-action="Create" class="btn btn-create">Crear Nuevo Inmueble</a>
         </div>
     </div>
     <div class="card-body p-0">
         <table class="table table-hover table-striped mb-0">
             <thead class="thead-light">
                 <tr>
+                    <th>Dueño</th>
                     <th>@Html.DisplayNameFor(model => model.Direccion)</th>
+                    <th>@Html.DisplayNameFor(model => model.Tipo)</th>
                     <th>@Html.DisplayNameFor(model => model.Uso)</th>
-                    <th>Tipo</th>
                     <th>Ambientes</th>
                     <th>@Html.DisplayNameFor(model => model.Precio)</th>
-                    <th class="text-center">@Html.DisplayNameFor(model => model.Disponible)</th>
-                    <th>Dueño</th>
+                    <th>Disponible</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -29,12 +29,17 @@
                 @foreach (var item in Model)
                 {
                     <tr>
+                        <td>
+                            @(item.Dueño != null ? $"{item.Dueño.Nombre} {item.Dueño.Apellido}" : "Sin asignar")
+                        </td>
                         <td>@Html.DisplayFor(modelItem => item.Direccion)</td>
+                        <td>
+                            @(item.Tipo?.Nombre ?? "Sin asignar")
+                        </td>
                         <td>@Html.DisplayFor(modelItem => item.Uso)</td>
-                        <td>@(item.Tipo?.Nombre)</td>
                         <td>@Html.DisplayFor(modelItem => item.Ambientes)</td>
-                        <td>@String.Format("{0:C}", item.Precio)</td>
-                        <td class="text-center">
+                        <td>$@Html.DisplayFor(modelItem => item.Precio)</td>
+                        <td>
                             @if (item.Disponible)
                             {
                                 <span class="badge bg-success">Sí</span>
@@ -44,11 +49,10 @@
                                 <span class="badge bg-danger">No</span>
                             }
                         </td>
-                        <td>@(item.Dueño?.Nombre) @(item.Dueño?.Apellido)</td>
                         <td class="action-buttons">
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-edit btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-details btn-sm"><i class="fas fa-info-circle"></i></a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-delete btn-sm"><i class="fas fa-trash-alt"></i></a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-edit btn-sm"><i class="fas fa-pencil-alt"></i> Editar</a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-details btn-sm"><i class="fas fa-info-circle"></i> Detalles</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-delete btn-sm"><i class="fas fa-trash-alt"></i> Eliminar</a>
                         </td>
                     </tr>
                 }

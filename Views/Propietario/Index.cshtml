@@ -33,9 +33,9 @@
                         <td>@Html.DisplayFor(modelItem => item.Telefono)</td>
                         <td>@Html.DisplayFor(modelItem => item.Email)</td>
                         <td class="action-buttons">
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-edit btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-details btn-sm"><i class="fas fa-info-circle"></i></a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-delete btn-sm"><i class="fas fa-trash-alt"></i></a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-edit btn-sm"><i class="fas fa-pencil-alt"></i> Editar</a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-details btn-sm"><i class="fas fa-info-circle"></i> Detalles</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-delete btn-sm"><i class="fas fa-trash-alt"></i> Eliminar</a>
                         </td>
                     </tr>
                 }

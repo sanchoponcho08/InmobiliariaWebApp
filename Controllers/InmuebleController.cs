@@ -3,318 +3,180 @@ using InmobiliariaWebApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using MySql.Data.MySqlClient;
-using System.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace InmobiliariaWebApp.Controllers
 {
     [Authorize]
     public class InmuebleController : Controller
     {
-        private readonly Conexion _conexion;
+        private readonly ApplicationDbContext _context;
 
-        public InmuebleController(IConfiguration configuration)
+        public InmuebleController(ApplicationDbContext context)
         {
-            _conexion = new Conexion(configuration);
+            _context = context;
         }
 
-        public IActionResult Index()
+        // GET: Inmueble
+        public async Task<IActionResult> Index()
         {
-            var inmuebles = new List<Inmueble>();
-            var propietarios = new Dictionary<int, Propietario>();
-            var tipos = new Dictionary<int, TipoInmueble>();
-
-            using (var connection = _conexion.TraerConexion())
-            {
-                connection.Open();
-
-                string sqlPropietarios = "SELECT Id, Nombre, Apellido FROM Propietarios";
-                using (var command = new MySqlCommand(sqlPropietarios, (MySqlConnection)connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        propietarios[reader.GetInt32("Id")] = new Propietario { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") };
-                    }
-                }
-
-                string sqlTipos = "SELECT Id, Nombre FROM TiposInmuebles";
-                using (var command = new MySqlCommand(sqlTipos, (MySqlConnection)connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        tipos[reader.GetInt32("Id")] = new TipoInmueble { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre") };
-                    }
-                }
-
-                string sqlInmuebles = "SELECT Id, Direccion, Uso, TipoInmuebleId, Ambientes, Precio, Coordenadas, Disponible, PropietarioId FROM Inmuebles";
-                using (var command = new MySqlCommand(sqlInmuebles, (MySqlConnection)connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var inmueble = new Inmueble
-                        {
-                            Id = reader.GetInt32("Id"),
-                            Direccion = reader.GetString("Direccion"),
-                            Uso = reader.GetString("Uso"),
-                            TipoInmuebleId = reader.GetInt32("TipoInmuebleId"),
-                            Ambientes = reader.GetInt32("Ambientes"),
-                            Precio = reader.GetDecimal("Precio"),
-                            Coordenadas = reader.GetString("Coordenadas"),
-                            Disponible = reader.GetBoolean("Disponible"),
-                            PropietarioId = reader.GetInt32("PropietarioId")
-                        };
-
-                        if (propietarios.ContainsKey(inmueble.PropietarioId))
-                        {
-                            inmueble.Dueño = propietarios[inmueble.PropietarioId];
-                        }
-
-                        if (tipos.ContainsKey(inmueble.TipoInmuebleId))
-                        {
-                            inmueble.Tipo = tipos[inmueble.TipoInmuebleId];
-                        }
-
-                        inmuebles.Add(inmueble);
-                    }
-                }
-            }
+            var inmuebles = await _context.Inmuebles
+                .Include(i => i.Dueño)
+                .Include(i => i.Tipo)
+                .ToListAsync();
             return View(inmuebles);
         }
 
-        public IActionResult Create()
+        // GET: Inmueble/Details/5
+        public async Task<IActionResult> Details(int? id)
         {
-            using (var connection = _conexion.TraerConexion())
+            if (id == null)
             {
-                connection.Open();
-
-                var propietarios = new List<Propietario>();
-                string sqlPropietarios = "SELECT Id, Nombre, Apellido FROM Propietarios";
-                using (var command = new MySqlCommand(sqlPropietarios, (MySqlConnection)connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        propietarios.Add(new Propietario { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") });
-                    }
-                }
-
-                var tipos = new List<TipoInmueble>();
-                string sqlTipos = "SELECT Id, Nombre FROM TiposInmuebles";
-                using (var command = new MySqlCommand(sqlTipos, (MySqlConnection)connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        tipos.Add(new TipoInmueble { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre") });
-                    }
-                }
-
-                ViewData["PropietarioId"] = new SelectList(propietarios, "Id", "NombreCompleto");
-                ViewData["TipoInmuebleId"] = new SelectList(tipos, "Id", "Nombre");
+                return NotFound();
             }
-            return View();
-        }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Create(Inmueble inmueble)
-        {
-            try
+            var inmueble = await _context.Inmuebles
+                .Include(i => i.Dueño)
+                .Include(i => i.Tipo)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (inmueble == null)
             {
-                using (var connection = _conexion.TraerConexion())
-                {
-                    string sql = "INSERT INTO Inmuebles (Direccion, Uso, TipoInmuebleId, Ambientes, Precio, Coordenadas, Disponible, PropietarioId) VALUES (@Direccion, @Uso, @TipoInmuebleId, @Ambientes, @Precio, @Coordenadas, @Disponible, @PropietarioId)";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Direccion", inmueble.Direccion);
-                        command.Parameters.AddWithValue("@Uso", inmueble.Uso);
-                        command.Parameters.AddWithValue("@TipoInmuebleId", inmueble.TipoInmuebleId);
-                        command.Parameters.AddWithValue("@Ambientes", inmueble.Ambientes);
-                        command.Parameters.AddWithValue("@Precio", inmueble.Precio);
-                        command.Parameters.AddWithValue("@Coordenadas", inmueble.Coordenadas);
-                        command.Parameters.AddWithValue("@Disponible", inmueble.Disponible);
-                        command.Parameters.AddWithValue("@PropietarioId", inmueble.PropietarioId);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
-                TempData["Success"] = "Inmueble creado exitosamente.";
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            catch
-            {
-                TempData["Error"] = "Ocurrió un error al crear el inmueble.";
-                return View(inmueble);
-            }
-        }
 
-        public IActionResult Edit(int id)
-        {
-            Inmueble? inmueble = null;
-            using (var connection = _conexion.TraerConexion())
-            {
-                connection.Open();
-
-                string sql = "SELECT Id, Direccion, Uso, TipoInmuebleId, Ambientes, Precio, Coordenadas, Disponible, PropietarioId FROM Inmuebles WHERE Id = @Id";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Id", id);
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            inmueble = new Inmueble
-                            {
-                                Id = reader.GetInt32("Id"),
-                                Direccion = reader.GetString("Direccion"),
-                                Uso = reader.GetString("Uso"),
-                                TipoInmuebleId = reader.GetInt32("TipoInmuebleId"),
-                                Ambientes = reader.GetInt32("Ambientes"),
-                                Precio = reader.GetDecimal("Precio"),
-                                Coordenadas = reader.GetString("Coordenadas"),
-                                Disponible = reader.GetBoolean("Disponible"),
-                                PropietarioId = reader.GetInt32("PropietarioId")
-                            };
-                        }
-                    }
-                }
-
-                if (inmueble == null) return NotFound();
-
-                var propietarios = new List<Propietario>();
-                string sqlPropietarios = "SELECT Id, Nombre, Apellido FROM Propietarios";
-                using (var command = new MySqlCommand(sqlPropietarios, (MySqlConnection)connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        propietarios.Add(new Propietario { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") });
-                    }
-                }
-
-                var tipos = new List<TipoInmueble>();
-                string sqlTipos = "SELECT Id, Nombre FROM TiposInmuebles";
-                using (var command = new MySqlCommand(sqlTipos, (MySqlConnection)connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        tipos.Add(new TipoInmueble { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre") });
-                    }
-                }
-
-                ViewData["PropietarioId"] = new SelectList(propietarios, "Id", "NombreCompleto", inmueble.PropietarioId);
-                ViewData["TipoInmuebleId"] = new SelectList(tipos, "Id", "Nombre", inmueble.TipoInmuebleId);
-            }
             return View(inmueble);
         }
 
+        // GET: Inmueble/Create
+        public IActionResult Create()
+        {
+            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto");
+            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre");
+            return View();
+        }
+
+        // POST: Inmueble/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Inmueble inmueble)
+        public async Task<IActionResult> Create([Bind("Id,Direccion,Uso,TipoInmuebleId,Ambientes,Precio,Coordenadas,Disponible,PropietarioId")] Inmueble inmueble)
         {
-            try
+            if (ModelState.IsValid)
             {
-                using (var connection = _conexion.TraerConexion())
-                {
-                    string sql = "UPDATE Inmuebles SET Direccion = @Direccion, Uso = @Uso, TipoInmuebleId = @TipoInmuebleId, Ambientes = @Ambientes, Precio = @Precio, Coordenadas = @Coordenadas, Disponible = @Disponible, PropietarioId = @PropietarioId WHERE Id = @Id";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Direccion", inmueble.Direccion);
-                        command.Parameters.AddWithValue("@Uso", inmueble.Uso);
-                        command.Parameters.AddWithValue("@TipoInmuebleId", inmueble.TipoInmuebleId);
-                        command.Parameters.AddWithValue("@Ambientes", inmueble.Ambientes);
-                        command.Parameters.AddWithValue("@Precio", inmueble.Precio);
-                        command.Parameters.AddWithValue("@Coordenadas", inmueble.Coordenadas);
-                        command.Parameters.AddWithValue("@Disponible", inmueble.Disponible);
-                        command.Parameters.AddWithValue("@PropietarioId", inmueble.PropietarioId);
-                        command.Parameters.AddWithValue("@Id", id);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
-                TempData["Success"] = "Inmueble actualizado exitosamente.";
+                _context.Add(inmueble);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Inmueble creado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                TempData["Error"] = "Ocurrió un error al actualizar el inmueble.";
-                return View(inmueble);
-            }
+            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto", inmueble.PropietarioId);
+            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre", inmueble.TipoInmuebleId);
+            return View(inmueble);
         }
-        
-        [Authorize(Roles = "Administrador")]
-        public IActionResult Delete(int id)
+
+        // GET: Inmueble/Edit/5
+        public async Task<IActionResult> Edit(int? id)
         {
-            if (!User.IsInRole("Administrador"))
+            if (id == null)
             {
-                return RedirectToAction("AccesoDenegado", "Home");
+                return NotFound();
             }
 
-            Inmueble? inmueble = null;
-            using (var connection = _conexion.TraerConexion())
+            var inmueble = await _context.Inmuebles.FindAsync(id);
+            if (inmueble == null)
             {
-                string sql = @"
-                    SELECT i.Id, i.Direccion, i.Uso, i.Precio, 
-                        p.Nombre AS PropietarioNombre, p.Apellido AS PropietarioApellido,
-                        t.Nombre AS TipoNombre
-                    FROM Inmuebles i
-                    JOIN Propietarios p ON i.PropietarioId = p.Id
-                    JOIN TiposInmuebles t ON i.TipoInmuebleId = t.Id
-                    WHERE i.Id = @Id";
+                return NotFound();
+            }
+            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto", inmueble.PropietarioId);
+            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre", inmueble.TipoInmuebleId);
+            return View(inmueble);
+        }
 
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+        // POST: Inmueble/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Direccion,Uso,TipoInmuebleId,Ambientes,Precio,Coordenadas,Disponible,PropietarioId")] Inmueble inmueble)
+        {
+            if (id != inmueble.Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
                 {
-                    command.Parameters.AddWithValue("@Id", id);
-                    connection.Open();
-                    using (var reader = command.ExecuteReader())
+                    _context.Update(inmueble);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Inmueble actualizado exitosamente.";
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!InmuebleExists(inmueble.Id))
                     {
-                        if (reader.Read())
-                        {
-                            inmueble = new Inmueble
-                            {
-                                Id = reader.GetInt32("Id"),
-                                Direccion = reader.GetString("Direccion"),
-                                Uso = reader.GetString("Uso"),
-                                Precio = reader.GetDecimal("Precio"),
-                                Dueño = new Propietario { Nombre = reader.GetString("PropietarioNombre"), Apellido = reader.GetString("PropietarioApellido") },
-                                Tipo = new TipoInmueble { Nombre = reader.GetString("TipoNombre") }
-                            };
-                        }
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
+                return RedirectToAction(nameof(Index));
             }
-            return inmueble == null ? NotFound() : View(inmueble);
+            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto", inmueble.PropietarioId);
+            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre", inmueble.TipoInmuebleId);
+            return View(inmueble);
         }
 
+        // GET: Inmueble/Delete/5
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var inmueble = await _context.Inmuebles
+                .Include(i => i.Dueño)
+                .Include(i => i.Tipo)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (inmueble == null)
+            {
+                return NotFound();
+            }
+
+            return View(inmueble);
+        }
+
+        // POST: Inmueble/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrador")]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var inmueble = await _context.Inmuebles.FindAsync(id);
             try
             {
-                using (var connection = _conexion.TraerConexion())
+                if (inmueble != null)
                 {
-                    string sql = "DELETE FROM Inmuebles WHERE Id = @Id";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Id", id);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
+                    _context.Inmuebles.Remove(inmueble);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Inmueble eliminado exitosamente.";
                 }
-                TempData["Success"] = "Inmueble eliminado exitosamente.";
-                return RedirectToAction(nameof(Index));
+                 return RedirectToAction(nameof(Index));
             }
-            catch
+            catch (Exception)
             {
                 TempData["Error"] = "Ocurrió un error al eliminar el inmueble. Es posible que esté asociado a un contrato.";
                 return RedirectToAction(nameof(Delete), new { id = id });
             }
+
+           
+        }
+
+        private bool InmuebleExists(int id)
+        {
+            return _context.Inmuebles.Any(e => e.Id == id);
         }
     }
 }
