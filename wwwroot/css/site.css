@@ -19,4 +19,21 @@ html {
 
 body {
   margin-bottom: 60px;
+  background-color: #01172b; 
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+.navbar {
+    background-color: #01172b !important; 
+}
+
+.navbar .navbar-brand, .navbar .nav-link {
+    color: #fff !important;
+}
+
+.footer {
+    background-color: #01172b;
+    color: #fff;
 }

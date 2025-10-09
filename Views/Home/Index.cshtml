@@ -1,8 +1,95 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿﻿@{
+    ViewData["Title"] = "Página de Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<style>
+    .hero-section {
+        position: relative;
+        height: 80vh;
+        background-image: url('https://images.unsplash.com/photo-1599946485895-6285a70321a4?q=80&w=2070&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .search-container {
+        position: relative;
+        z-index: 2;
+        background-color: rgba(1, 23, 43, 0.8); 
+        padding: 40px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 800px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .search-container h1 {
+        margin-bottom: 30px;
+        font-weight: 300;
+        font-size: 2.5rem;
+        text-align: center;
+    }
+
+    .search-form .form-control {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        color: #333;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .search-form .btn-primary {
+        background-color: #00bcd4; 
+        border: none;
+        padding: 15px;
+        width: 100%;
+        font-size: 1.2rem;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .search-form .btn-primary:hover {
+        background-color: #0097a7;
+    }
+
+</style>
+
+<div class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="search-container">
+        <h1>Encuentra la propiedad de tus sueños en Merlo</h1>
+        <form class="search-form row">
+            <div class="col-md-4">
+                <select class="form-control">
+                    <option>Tipo de Propiedad</option>
+                    <option>Casa</option>
+                    <option>Departamento</option>
+                    <option>Terreno</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control">
+                    <option>Operación</option>
+                    <option>Alquiler</option>
+                    <option>Venta</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+        </form>
+    </div>
 </div>
