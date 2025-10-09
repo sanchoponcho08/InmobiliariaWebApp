@@ -18,6 +18,10 @@ namespace InmobiliariaWebApp.Controllers
 
         private int ObtenerUsuarioIdActual()
         {
+            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name))
+            {
+                return 0;
+            }
             var email = User.Identity.Name;
             using (var connection = _conexion.TraerConexion())
             {
@@ -119,6 +123,11 @@ namespace InmobiliariaWebApp.Controllers
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
+            if (!User.IsInRole("Administrador"))
+            {
+                return RedirectToAction("AccesoDenegado", "Home");
+            }
+
             Pago? pago = null;
             using (var connection = _conexion.TraerConexion())
             {
@@ -180,7 +189,7 @@ namespace InmobiliariaWebApp.Controllers
             catch
             {
                 TempData["Error"] = "Ocurrió un error al anular el pago.";
-                return RedirectToAction(nameof(Index), new { id = contratoId });
+                return RedirectToAction(nameof(Delete), new { id = id });
             }
         }
         public IActionResult Details(int id)

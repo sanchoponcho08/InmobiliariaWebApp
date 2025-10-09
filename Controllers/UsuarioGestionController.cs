@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using System.Data;
+using BCrypt.Net;
 
 namespace InmobiliariaWebApp.Controllers
 {
@@ -56,6 +57,7 @@ namespace InmobiliariaWebApp.Controllers
         {
             try
             {
+                usuario.Clave = BCrypt.Net.BCrypt.HashPassword(usuario.Clave);
                 using (var connection = _conexion.TraerConexion())
                 {
                     string sql = "INSERT INTO Usuarios (Nombre, Apellido, Email, Clave, Rol) VALUES (@Nombre, @Apellido, @Email, @Clave, @Rol)";
@@ -117,7 +119,17 @@ namespace InmobiliariaWebApp.Controllers
             {
                 using (var connection = _conexion.TraerConexion())
                 {
-                    string sql = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido, Email = @Email, Rol = @Rol WHERE Id = @Id";
+                    string sql;
+                    if (!string.IsNullOrEmpty(usuario.Clave))
+                    {
+                        usuario.Clave = BCrypt.Net.BCrypt.HashPassword(usuario.Clave);
+                        sql = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido, Email = @Email, Rol = @Rol, Clave = @Clave WHERE Id = @Id";
+                    }
+                    else
+                    {
+                        sql = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido, Email = @Email, Rol = @Rol WHERE Id = @Id";
+                    }
+                    
                     using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
                     {
                         command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
@@ -125,6 +137,10 @@ namespace InmobiliariaWebApp.Controllers
                         command.Parameters.AddWithValue("@Email", usuario.Email);
                         command.Parameters.AddWithValue("@Rol", usuario.Rol);
                         command.Parameters.AddWithValue("@Id", id);
+                        if (!string.IsNullOrEmpty(usuario.Clave))
+                        {
+                            command.Parameters.AddWithValue("@Clave", usuario.Clave);
+                        }
                         connection.Open();
                         command.ExecuteNonQuery();
                     }

@@ -148,7 +148,7 @@ namespace InmobiliariaWebApp.Controllers
             }
         }
 
-      [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
             Inquilino? inquilino = null;
@@ -194,7 +194,7 @@ namespace InmobiliariaWebApp.Controllers
             catch
             {
                 TempData["Error"] = "Ocurrió un error al eliminar el inquilino.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Delete), new { id = id });
             }
         }
     }

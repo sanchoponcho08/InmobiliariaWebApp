@@ -6,12 +6,10 @@ namespace InmobiliariaWebApp.Data
     public class Conexion
     {
         private readonly string connectionString;
-        private readonly IConfiguration configuration;
 
         public Conexion(IConfiguration configuration)
         {
-            this.configuration = configuration;
-            this.connectionString = configuration["ConnectionStrings:DefaultConnection"];
+            connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         }
 
         public IDbConnection TraerConexion()

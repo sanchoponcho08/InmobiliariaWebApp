@@ -10,9 +10,9 @@
     <hr />
     <dl class="row">
         <dt class="col-sm-2">Dueño</dt>
-        <dd class="col-sm-10">@Html.DisplayFor(model => model.Dueño.Nombre) @Html.DisplayFor(model => model.Dueño.Apellido)</dd>
+        <dd class="col-sm-10">@(Model.Dueño?.Nombre) @(Model.Dueño?.Apellido)</dd>
         <dt class="col-sm-2">Tipo</dt>
-        <dd class="col-sm-10">@Html.DisplayFor(model => model.Tipo.Nombre)</dd>
+        <dd class="col-sm-10">@(Model.Tipo?.Nombre)</dd>
         <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Direccion)</dt>
         <dd class="col-sm-10">@Html.DisplayFor(model => model.Direccion)</dd>
         <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Uso)</dt>

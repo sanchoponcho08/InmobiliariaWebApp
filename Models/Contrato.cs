@@ -21,8 +21,9 @@ namespace InmobiliariaWebApp.Models
 
         [Display(Name = "Monto del Alquiler")]
         public decimal MontoAlquiler { get; set; }
+        
         [Display(Name = "Fecha de Rescisión")]
-        public DateTime? FechaRescision { get; set; } // El '?' permite que sea nulo
+        public DateTime? FechaRescision { get; set; }
 
         public decimal Multa { get; set; }
 
@@ -32,9 +33,13 @@ namespace InmobiliariaWebApp.Models
         [ForeignKey(nameof(InmuebleId))]
         public Inmueble? Inmueble { get; set; }
 
+        // Auditoría
         public int? UsuarioIdCreador { get; set; }
-        public int? UsuarioIdTerminador { get; set; }
+        [ForeignKey(nameof(UsuarioIdCreador))]
         public Usuario? Creador { get; set; }
-        
+
+        public int? UsuarioIdTerminador { get; set; }
+        [ForeignKey(nameof(UsuarioIdTerminador))]
+        public Usuario? Terminador { get; set; }
     }
 }

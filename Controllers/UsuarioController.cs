@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using BCrypt.Net;
 
 namespace InmobiliariaWebApp.Controllers
 {
@@ -19,32 +20,6 @@ namespace InmobiliariaWebApp.Controllers
         public UsuarioController(IConfiguration configuration)
         {
             _conexion = new Conexion(configuration);
-        }
-
-        public IActionResult Register()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult Register(Usuario usuario)
-        {
-            usuario.Rol = "Empleado";
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "INSERT INTO Usuarios (Nombre, Apellido, Email, Clave, Rol) VALUES (@Nombre, @Apellido, @Email, @Clave, @Rol)";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
-                    command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
-                    command.Parameters.AddWithValue("@Email", usuario.Email);
-                    command.Parameters.AddWithValue("@Clave", usuario.Clave); // ¡Recuerda encriptar esto en un proyecto real!
-                    command.Parameters.AddWithValue("@Rol", usuario.Rol);
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                }
-            }
-            return RedirectToAction("Login");
         }
 
         public IActionResult Login()
@@ -81,10 +56,62 @@ namespace InmobiliariaWebApp.Controllers
                 }
             }
 
-            if (usuario == null || usuario.Clave != Clave)
+            if (usuario == null)
             {
                 TempData["Error"] = "El email o la contraseña son incorrectos.";
                 return View();
+            }
+
+            bool passwordIsValid = false;
+            bool needsUpgrade = false;
+
+            try
+            {
+                // Si la clave parece un hash, se verifica. Si no, se trata como texto plano.
+                if (usuario.Clave.StartsWith("$2"))
+                {
+                    passwordIsValid = BCrypt.Net.BCrypt.Verify(Clave, usuario.Clave);
+                }
+                else
+                {
+                    if (usuario.Clave == Clave)
+                    {
+                        passwordIsValid = true;
+                        needsUpgrade = true; // Marcar para actualizar a hash
+                    }
+                }
+            }
+            catch (SaltParseException)
+            {
+                // Si BCrypt falla al parsear, asumimos que es texto plano y comparamos.
+                 if (usuario.Clave == Clave)
+                    {
+                        passwordIsValid = true;
+                        needsUpgrade = true; // Marcar para actualizar a hash
+                    }
+            }
+
+
+            if (!passwordIsValid)
+            {
+                TempData["Error"] = "El email o la contraseña son incorrectos.";
+                return View();
+            }
+
+            if (needsUpgrade)
+            {
+                var hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(Clave);
+                using (var connection = _conexion.TraerConexion())
+                {
+                    string sql = "UPDATE Usuarios SET Clave = @ClaveNueva WHERE Email = @Email";
+                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                    {
+                        command.Parameters.AddWithValue("@ClaveNueva", hashedNewPassword);
+                        command.Parameters.AddWithValue("@Email", usuario.Email);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
             }
 
             var claims = new List<Claim>
@@ -112,6 +139,7 @@ namespace InmobiliariaWebApp.Controllers
         [Authorize]
         public IActionResult Perfil()
         {
+            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
             Usuario? usuario = null;
             var userEmail = User.Identity.Name;
 
@@ -146,6 +174,7 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult Perfil(Usuario usuario)
         {
+            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
             var userEmail = User.Identity.Name;
             try
             {
@@ -175,6 +204,7 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult ActualizarAvatar(IFormFile avatar)
         {
+            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
             var userEmail = User.Identity.Name;
             if (avatar != null && avatar.Length > 0)
             {
@@ -211,8 +241,8 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult CambiarPassword(string claveActual, string claveNueva, string confirmarClave)
         {
+            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
             var userEmail = User.Identity.Name;
-            Usuario? usuario = null;
 
             if (string.IsNullOrEmpty(claveNueva) || claveNueva != confirmarClave)
             {
@@ -229,7 +259,7 @@ namespace InmobiliariaWebApp.Controllers
                     connection.Open();
                     var storedPassword = command.ExecuteScalar() as string;
 
-                    if (storedPassword != claveActual)
+                    if (storedPassword == null || !BCrypt.Net.BCrypt.Verify(claveActual, storedPassword))
                     {
                         TempData["Error"] = "La contraseña actual es incorrecta.";
                         return RedirectToAction(nameof(Perfil));
@@ -239,12 +269,13 @@ namespace InmobiliariaWebApp.Controllers
 
             try
             {
+                var hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(claveNueva);
                 using (var connection = _conexion.TraerConexion())
                 {
                     string sql = "UPDATE Usuarios SET Clave = @ClaveNueva WHERE Email = @Email";
                     using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
                     {
-                        command.Parameters.AddWithValue("@ClaveNueva", claveNueva);
+                        command.Parameters.AddWithValue("@ClaveNueva", hashedNewPassword);
                         command.Parameters.AddWithValue("@Email", userEmail);
                         connection.Open();
                         command.ExecuteNonQuery();
@@ -264,6 +295,7 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult QuitarAvatar()
         {
+            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
             var userEmail = User.Identity.Name;
             try
             {

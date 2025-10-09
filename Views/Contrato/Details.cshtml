@@ -28,13 +28,21 @@
         <dd class = "col-sm-9">@Model.MontoAlquiler.ToString("C")</dd>
     </dl>
 
-    @if (User.IsInRole("Administrador") && Model.Creador != null)
+    @if (User.IsInRole("Administrador"))
     {
         <hr />
         <h4>Información de Auditoría</h4>
         <dl class="row">
-            <dt class="col-sm-3">Contrato Creado Por</dt>
-            <dd class="col-sm-9">@Model.Creador.Nombre @Model.Creador.Apellido</dd>
+            @if (Model.Creador != null)
+            {
+                <dt class="col-sm-3">Contrato Creado Por</dt>
+                <dd class="col-sm-9">@Model.Creador.Nombre @Model.Creador.Apellido</dd>
+            }
+            @if (Model.Terminador != null)
+            {
+                <dt class="col-sm-3">Contrato Terminado Por</dt>
+                <dd class="col-sm-9">@Model.Terminador.Nombre @Model.Terminador.Apellido</dd>
+            }
         </dl>
     }
 </div>

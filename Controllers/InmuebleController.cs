@@ -249,6 +249,11 @@ namespace InmobiliariaWebApp.Controllers
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
+            if (!User.IsInRole("Administrador"))
+            {
+                return RedirectToAction("AccesoDenegado", "Home");
+            }
+
             Inmueble? inmueble = null;
             using (var connection = _conexion.TraerConexion())
             {
@@ -282,8 +287,8 @@ namespace InmobiliariaWebApp.Controllers
                     }
                 }
             }
-    return inmueble == null ? NotFound() : View(inmueble);
-}
+            return inmueble == null ? NotFound() : View(inmueble);
+        }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
@@ -308,7 +313,7 @@ namespace InmobiliariaWebApp.Controllers
             catch
             {
                 TempData["Error"] = "Ocurrió un error al eliminar el inmueble. Es posible que esté asociado a un contrato.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Delete), new { id = id });
             }
         }
     }

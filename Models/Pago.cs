@@ -20,15 +20,18 @@ namespace InmobiliariaWebApp.Models
 
         public string Detalle { get; set; } = "";
 
-
         public string Estado { get; set; } = "Vigente";
 
         [ForeignKey(nameof(ContratoId))]
         public Contrato? Contrato { get; set; }
 
+        // Auditoría
         public int? UsuarioIdCreador { get; set; }
-        public int? UsuarioIdAnulador { get; set; }
+        [ForeignKey(nameof(UsuarioIdCreador))]
         public Usuario? Creador { get; set; }
+
+        public int? UsuarioIdAnulador { get; set; }
+        [ForeignKey(nameof(UsuarioIdAnulador))]
         public Usuario? Anulador { get; set; }
     }
 }

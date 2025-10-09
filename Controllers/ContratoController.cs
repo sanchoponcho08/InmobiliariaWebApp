@@ -18,8 +18,12 @@ namespace InmobiliariaWebApp.Controllers
             _conexion = new Conexion(configuration);
         }
 
-         private int ObtenerUsuarioIdActual()
+        private int ObtenerUsuarioIdActual()
         {
+            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name))
+            {
+                return 0;
+            }
             var email = User.Identity.Name;
             using (var connection = _conexion.TraerConexion())
             {
@@ -112,16 +116,18 @@ namespace InmobiliariaWebApp.Controllers
             using (var connection = _conexion.TraerConexion())
             {
                 string sql = @"
-                    SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler,
+                    SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler, c.FechaRescision, c.Multa,
                         i.Nombre AS InquilinoNombre, i.Apellido AS InquilinoApellido,
                         im.Direccion AS InmuebleDireccion,
                         p.Nombre AS PropietarioNombre, p.Apellido AS PropietarioApellido,
-                        u.Nombre AS CreadorNombre, u.Apellido AS CreadorApellido
+                        uc.Nombre AS CreadorNombre, uc.Apellido AS CreadorApellido,
+                        ut.Nombre AS TerminadorNombre, ut.Apellido AS TerminadorApellido
                     FROM Contratos c
                     LEFT JOIN Inquilinos i ON c.InquilinoId = i.Id
                     LEFT JOIN Inmuebles im ON c.InmuebleId = im.Id
                     LEFT JOIN Propietarios p ON im.PropietarioId = p.Id
-                    LEFT JOIN Usuarios u ON c.UsuarioIdCreador = u.Id
+                    LEFT JOIN Usuarios uc ON c.UsuarioIdCreador = uc.Id
+                    LEFT JOIN Usuarios ut ON c.UsuarioIdTerminador = ut.Id
                     WHERE c.Id = @Id";
                 
                 using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
@@ -138,15 +144,16 @@ namespace InmobiliariaWebApp.Controllers
                                 FechaInicio = reader.GetDateTime("FechaInicio"),
                                 FechaFin = reader.GetDateTime("FechaFin"),
                                 MontoAlquiler = reader.GetDecimal("MontoAlquiler"),
+                                FechaRescision = reader.IsDBNull(reader.GetOrdinal("FechaRescision")) ? (DateTime?)null : reader.GetDateTime("FechaRescision"),
+                                Multa = reader.GetDecimal("Multa"),
                                 Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre"), Apellido = reader.GetString("InquilinoApellido") },
                                 Inmueble = new Inmueble
                                 {
                                     Direccion = reader.GetString("InmuebleDireccion"),
                                     Dueño = new Propietario { Nombre = reader.GetString("PropietarioNombre"), Apellido = reader.GetString("PropietarioApellido") }
                                 },
-                                
-                                UsuarioIdCreador = reader.IsDBNull("CreadorNombre") ? (int?)null : -1, // Solo para saber si existe
-                                Creador = reader.IsDBNull("CreadorNombre") ? null : new Usuario { Nombre = reader.GetString("CreadorNombre"), Apellido = reader.GetString("CreadorApellido") }
+                                Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { Nombre = reader.GetString("CreadorNombre"), Apellido = reader.GetString("CreadorApellido") },
+                                Terminador = reader.IsDBNull(reader.GetOrdinal("TerminadorNombre")) ? null : new Usuario { Nombre = reader.GetString("TerminadorNombre"), Apellido = reader.GetString("TerminadorApellido") }
                             };
                         }
                     }
@@ -231,9 +238,10 @@ namespace InmobiliariaWebApp.Controllers
 
             try
             {
+                contrato.UsuarioIdCreador = ObtenerUsuarioIdActual();
                 using (var connection = _conexion.TraerConexion())
                 {
-                    string sql = "INSERT INTO Contratos (InquilinoId, InmuebleId, FechaInicio, FechaFin, MontoAlquiler, FechaRescision, Multa) VALUES (@InquilinoId, @InmuebleId, @FechaInicio, @FechaFin, @MontoAlquiler, NULL, 0)";
+                    string sql = "INSERT INTO Contratos (InquilinoId, InmuebleId, FechaInicio, FechaFin, MontoAlquiler, UsuarioIdCreador, FechaRescision, Multa) VALUES (@InquilinoId, @InmuebleId, @FechaInicio, @FechaFin, @MontoAlquiler, @UsuarioIdCreador, NULL, 0)";
                     using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
                     {
                         command.Parameters.AddWithValue("@InquilinoId", contrato.InquilinoId);
@@ -241,6 +249,7 @@ namespace InmobiliariaWebApp.Controllers
                         command.Parameters.AddWithValue("@FechaInicio", contrato.FechaInicio);
                         command.Parameters.AddWithValue("@FechaFin", contrato.FechaFin);
                         command.Parameters.AddWithValue("@MontoAlquiler", contrato.MontoAlquiler);
+                        command.Parameters.AddWithValue("@UsuarioIdCreador", contrato.UsuarioIdCreador);
                         connection.Open();
                         command.ExecuteNonQuery();
                     }
@@ -300,6 +309,10 @@ namespace InmobiliariaWebApp.Controllers
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
+            if (!User.IsInRole("Administrador"))
+            {
+                return RedirectToAction("AccesoDenegado", "Home");
+            }
             return Details(id);
         }
 
@@ -332,7 +345,7 @@ namespace InmobiliariaWebApp.Controllers
             catch
             {
                  TempData["Error"] = "Ocurrió un error al eliminar el contrato.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Delete), new { id = id });
             }
         }
 
