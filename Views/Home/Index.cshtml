@@ -2,36 +2,99 @@
     ViewData["Title"] = "Página de Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Bienvenido a InmobiliariaWebApp</h1>
-    <p>Tu solución completa para la gestión inmobiliaria.</p>
+<style>
+    .hero-section {
+        height: 75vh;
+        background: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=2146&auto=format&fit=crop') no-repeat center center;
+        background-size: cover;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: white;
+        border-radius: 0.5rem;
+        position: relative;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 0.5rem;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        margin-top: 1rem;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .btn-custom-primary {
+        background-color: #3498db;
+        border-color: #3498db;
+        color: white;
+        padding: 12px 25px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .btn-custom-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+    }
+</style>
+
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Encuentra tu Próximo Hogar</h1>
+        <p class="hero-subtitle">La propiedad de tus sueños está a solo un clic de distancia.</p>
+        <a asp-controller="Busqueda" asp-action="Index" class="btn btn-custom-primary mt-4">Buscar Inmuebles</a>
+    </div>
 </div>
 
-<div class="row mt-5">
-    <div class="col-md-4">
-        <div class="card text-center mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Gestión de Inquilinos</h5>
-                <p class="card-text">Administra la información de todos tus inquilinos de forma centralizada.</p>
-                <a asp-controller="Inquilino" asp-action="Index" class="btn btn-primary">Ir a Inquilinos</a>
+<div class="container mt-5">
+    <div class="row text-center">
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">Gestión de Contratos</h5>
+                    <p class="card-text">Administra alquileres, pagos y renovaciones de forma sencilla.</p>
+                    <a asp-controller="Contrato" asp-action="Index" class="btn btn-outline-light">Ver Contratos</a>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-center mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Gestión de Propietarios</h5>
-                <p class="card-text">Mantén al día los datos y propiedades de cada propietario.</p>
-                <a asp-controller="Propietario" asp-action="Index" class="btn btn-primary">Ir a Propietarios</a>
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">Nuestros Clientes</h5>
+                    <p class="card-text">Consulta la información de inquilinos y propietarios.</p>
+                    <a asp-controller="Inquilino" asp-action="Index" class="btn btn-outline-light">Ver Clientes</a>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-center mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Gestión de Inmuebles</h5>
-                <p class="card-text">Consulta y actualiza el catálogo de inmuebles disponibles.</p>
-                <a asp-controller="Inmueble" asp-action="Index" class="btn btn-primary">Ir a Inmuebles</a>
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">Catálogo de Inmuebles</h5>
+                    <p class="card-text">Explora y gestiona todas las propiedades en el sistema.</p>
+                    <a asp-controller="Inmueble" asp-action="Index" class="btn btn-outline-light">Ver Inmuebles</a>
+                </div>
             </div>
         </div>
     </div>
