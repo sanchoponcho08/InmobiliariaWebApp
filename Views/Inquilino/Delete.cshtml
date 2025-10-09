@@ -4,30 +4,37 @@
     ViewData["Title"] = "Eliminar Inquilino";
 }
 
-<div class="container">
-    <h1 class="display-4">Eliminar Inquilino</h1>
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3 class="card-title">¿Estás seguro de que quieres eliminar este inquilino?</h3>
+            </div>
+            <div class="card-body">
+                <p>Esta acción es irreversible. Por favor, confirma los detalles del inquilino a continuación antes de proceder.</p>
+                <hr/>
+                <dl class="row">
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Nombre)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Nombre)</dd>
 
-    <h3>¿Estás seguro de que quieres eliminar a este inquilino?</h3>
-    <div>
-        <h4>Inquilino</h4>
-        <hr />
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="alert alert-danger">
-                    <dl class="row">
-                        <dt class="col-sm-3">Nombre</dt>
-                        <dd class="col-sm-9">@Model.Nombre</dd>
-                        <dt class="col-sm-3">Apellido</dt>
-                        <dd class="col-sm-9">@Model.Apellido</dd>
-                        <dt class="col-sm-3">DNI</dt>
-                        <dd class="col-sm-9">@Model.Dni</dd>
-                    </dl>
-                </div>
-                
-                <form asp-action="Delete">
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Apellido)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Apellido)</dd>
+
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Dni)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Dni)</dd>
+
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Telefono)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Telefono)</dd>
+
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Email)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Email)</dd>
+                </dl>
+            </div>
+            <div class="card-footer">
+                 <form asp-action="Delete">
                     <input type="hidden" asp-for="Id" />
-                    <input type="submit" value="Eliminar" class="btn btn-danger" />
-                    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                    <input type="submit" value="Eliminar" class="btn btn-delete" />
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar y Volver al Listado</a>
                 </form>
             </div>
         </div>

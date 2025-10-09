@@ -4,26 +4,33 @@
     ViewData["Title"] = "Detalles del Inquilino";
 }
 
-<div class="container">
-    <h1 class="display-4">Detalles del Inquilino</h1>
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header text-white">
+                <h3 class="card-title">Detalles del Inquilino</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Nombre)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Nombre)</dd>
 
-    <div>
-        <h4>Inquilino</h4>
-        <hr />
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">@Model.Nombre @Model.Apellido</h5>
-                        <p class="card-text"><strong>DNI:</strong> @Model.Dni</p>
-                        <p class="card-text"><strong>Teléfono:</strong> @Model.Telefono</p>
-                        <p class="card-text"><strong>Email:</strong> @Model.Email</p>
-                    </div>
-                    <div class="card-footer">
-                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar</a>
-                        <a asp-action="Index" class="btn btn-secondary">Volver a la Lista</a>
-                    </div>
-                </div>
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Apellido)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Apellido)</dd>
+
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Dni)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Dni)</dd>
+
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Telefono)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Telefono)</dd>
+
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Email)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Email)</dd>
+                </dl>
+            </div>
+            <div class="card-footer">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-edit">Editar</a>
+                <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
             </div>
         </div>
     </div>
