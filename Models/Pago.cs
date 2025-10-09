@@ -25,8 +25,10 @@ namespace InmobiliariaWebApp.Models
 
         [ForeignKey(nameof(ContratoId))]
         public Contrato? Contrato { get; set; }
-        
+
         public int? UsuarioIdCreador { get; set; }
         public int? UsuarioIdAnulador { get; set; }
+        public Usuario? Creador { get; set; }
+        public Usuario? Anulador { get; set; }
     }
 }

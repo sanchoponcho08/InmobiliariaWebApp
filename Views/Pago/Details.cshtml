@@ -1,0 +1,70 @@
+@model InmobiliariaWebApp.Models.Pago
+
+@{ 
+    ViewData["Title"] = "Detalles del Pago"; 
+}
+
+<h1>Detalles del Pago</h1>
+
+<div>
+    <h4>Detalles del Pago</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-3">Contrato</dt>
+        <dd class = "col-sm-9">
+            @Model.Contrato?.Inquilino?.NombreCompleto - @Model.Contrato?.Inmueble?.Direccion
+        </dd>
+        <dt class = "col-sm-3">
+            @Html.DisplayNameFor(model => model.NumeroPago)
+        </dt>
+        <dd class = "col-sm-9">
+            @Html.DisplayFor(model => model.NumeroPago)
+        </dd>
+        <dt class = "col-sm-3">
+            @Html.DisplayNameFor(model => model.FechaPago)
+        </dt>
+        <dd class = "col-sm-9">
+            @Model.FechaPago.ToShortDateString()
+        </dd>
+        <dt class = "col-sm-3">
+            @Html.DisplayNameFor(model => model.Importe)
+        </dt>
+        <dd class = "col-sm-9">
+            @Model.Importe.ToString("C")
+        </dd>
+        <dt class = "col-sm-3">
+            @Html.DisplayNameFor(model => model.Detalle)
+        </dt>
+        <dd class = "col-sm-9">
+            @Html.DisplayFor(model => model.Detalle)
+        </dd>
+        <dt class = "col-sm-3">
+            @Html.DisplayNameFor(model => model.Estado)
+        </dt>
+        <dd class = "col-sm-9">
+            @Html.DisplayFor(model => model.Estado)
+        </dd>
+    </dl>
+</div>
+
+@if (User.IsInRole("Administrador"))
+{
+    <hr />
+    <h4>Información de Auditoría</h4>
+    <dl class="row">
+        @if (Model.Creador != null)
+        {
+            <dt class="col-sm-3">Pago Registrado Por</dt>
+            <dd class="col-sm-9">@Model.Creador.Nombre @Model.Creador.Apellido</dd>
+        }
+        @if (Model.Anulador != null)
+        {
+            <dt class="col-sm-3">Pago Anulado Por</dt>
+            <dd class="col-sm-9">@Model.Anulador.Nombre @Model.Anulador.Apellido</dd>
+        }
+    </dl>
+}
+<br/>
+<div>
+    <a asp-action="Index" asp-route-id="@Model.ContratoId">Volver al Listado de Pagos</a>
+</div>
