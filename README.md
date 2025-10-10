@@ -35,9 +35,14 @@ Proyecto final para la materia Laboratorio de Programación. Se trata de un sist
   - Reporte de inmuebles por propietario.
   - Reporte de contratos por inmueble.
 - **Auditoría y Usabilidad:**
+
   - Registro de qué usuario realiza las acciones clave.
   - Visualización de auditoría solo para administradores.
   - Notificaciones de éxito/error para mejorar la experiencia de usuario.
+
+  ## Diagrama de Clases
+
+![Diagrama de Clases del Proyecto](diagrama_clases.png)
 
 ## Guía de Instalación y Ejecución
 
