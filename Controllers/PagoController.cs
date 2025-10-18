@@ -24,7 +24,14 @@ namespace InmobiliariaWebApp.Controllers
             ViewBag.ContratoId = id;
             var pagos = _pagoRepository.GetPagosByContratoId(id);
             var contrato = _contratoRepository.GetById(id);
-            ViewBag.ContratoInfo = $"Contrato de {contrato.Inquilino.Nombre} {contrato.Inquilino.Apellido} sobre {contrato.Inmueble.Direccion}";
+            if (contrato != null && contrato.Inquilino != null && contrato.Inmueble != null)
+            {
+                ViewBag.ContratoInfo = $"Contrato de {contrato.Inquilino.Nombre} {contrato.Inquilino.Apellido} sobre {contrato.Inmueble.Direccion}";
+            }
+            else
+            {
+                ViewBag.ContratoInfo = "Información del contrato no disponible";
+            }
 
             return View(pagos);
         }
@@ -41,7 +48,13 @@ namespace InmobiliariaWebApp.Controllers
         {
             try
             {
-                pago.UsuarioIdCreador = _usuarioRepository.GetCurrentUserId(User.Identity.Name);
+                var userEmail = User.Identity?.Name;
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    TempData["Error"] = "No se pudo obtener la información del usuario.";
+                    return View(pago);
+                }
+                pago.UsuarioIdCreador = _usuarioRepository.GetCurrentUserId(userEmail);
                 _pagoRepository.Create(pago);
                 TempData["Success"] = "Pago registrado exitosamente.";
                 return RedirectToAction(nameof(Index), new { id = pago.ContratoId });
@@ -74,7 +87,13 @@ namespace InmobiliariaWebApp.Controllers
             try
             {
                 contratoId = _pagoRepository.GetContratoIdByPagoId(id);
-                var usuarioId = _usuarioRepository.GetCurrentUserId(User.Identity.Name);
+                var userEmail = User.Identity?.Name;
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    TempData["Error"] = "No se pudo obtener la información del usuario.";
+                    return RedirectToAction(nameof(Index), new { id = contratoId });
+                }
+                var usuarioId = _usuarioRepository.GetCurrentUserId(userEmail);
                 _pagoRepository.Anular(id, usuarioId);
                 TempData["Success"] = "Pago anulado correctamente.";
                 return RedirectToAction(nameof(Index), new { id = contratoId });

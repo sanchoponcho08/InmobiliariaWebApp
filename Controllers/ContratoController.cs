@@ -51,7 +51,13 @@ namespace InmobiliariaWebApp.Controllers
 
             try
             {
-                contrato.UsuarioIdCreador = _usuarioRepository.GetCurrentUserId(User.Identity.Name);
+                var userEmail = User.Identity?.Name;
+                if (string.IsNullOrEmpty(userEmail))
+                {
+                    TempData["Error"] = "No se pudo obtener la información del usuario.";
+                    return View(contrato);
+                }
+                contrato.UsuarioIdCreador = _usuarioRepository.GetCurrentUserId(userEmail);
                 _contratoRepository.Create(contrato);
                 TempData["Success"] = "Contrato creado exitosamente.";
                 return RedirectToAction(nameof(Index));
@@ -130,7 +136,13 @@ namespace InmobiliariaWebApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Terminar(int id, decimal Multa)
         {
-            var usuarioId = _usuarioRepository.GetCurrentUserId(User.Identity.Name);
+            var userEmail = User.Identity?.Name;
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                TempData["Error"] = "No se pudo obtener la información del usuario.";
+                return RedirectToAction(nameof(Index));
+            }
+            var usuarioId = _usuarioRepository.GetCurrentUserId(userEmail);
             _contratoRepository.TerminarContrato(id, Multa, usuarioId);
             return RedirectToAction(nameof(Index));
         }

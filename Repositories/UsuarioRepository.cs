@@ -55,7 +55,7 @@ namespace InmobiliariaWebApp.Repositories
                                 Email = reader.GetString("Email"),
                                 Clave = reader.GetString("Clave"),
                                 Rol = reader.GetString("Rol"),
-                                Avatar = reader.IsDBNull("Avatar") ? null : reader.GetString("Avatar")
+                                Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar")) ? null : reader.GetString("Avatar")
                             };
                         }
                     }
