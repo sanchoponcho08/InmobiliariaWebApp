@@ -2,7 +2,7 @@ using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace InmobiliariaWebApp.Controllers
