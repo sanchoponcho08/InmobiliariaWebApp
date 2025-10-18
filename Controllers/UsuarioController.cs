@@ -1,11 +1,7 @@
-using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
+using InmobiliariaWebApp.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
-using System.Data;
-using System.IO;
-using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -15,11 +11,11 @@ namespace InmobiliariaWebApp.Controllers
 {
     public class UsuarioController : Controller
     {
-        private readonly Conexion _conexion;
+        private readonly UsuarioRepository _usuarioRepository;
 
         public UsuarioController(IConfiguration configuration)
         {
-            _conexion = new Conexion(configuration);
+            _usuarioRepository = new UsuarioRepository(configuration);
         }
 
         public IActionResult Login()
@@ -30,31 +26,7 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string Email, string Clave)
         {
-            Usuario? usuario = null;
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "SELECT Id, Nombre, Apellido, Email, Clave, Rol FROM Usuarios WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Email", Email);
-                    connection.Open();
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            usuario = new Usuario
-                            {
-                                Id = reader.GetInt32("Id"),
-                                Nombre = reader.GetString("Nombre"),
-                                Apellido = reader.GetString("Apellido"),
-                                Email = reader.GetString("Email"),
-                                Clave = reader.GetString("Clave"),
-                                Rol = reader.GetString("Rol")
-                            };
-                        }
-                    }
-                }
-            }
+            var usuario = _usuarioRepository.GetByEmail(Email);
 
             if (usuario == null)
             {
@@ -67,7 +39,6 @@ namespace InmobiliariaWebApp.Controllers
 
             try
             {
-                // Si la clave parece un hash, se verifica. Si no, se trata como texto plano.
                 if (usuario.Clave.StartsWith("$2"))
                 {
                     passwordIsValid = BCrypt.Net.BCrypt.Verify(Clave, usuario.Clave);
@@ -77,20 +48,18 @@ namespace InmobiliariaWebApp.Controllers
                     if (usuario.Clave == Clave)
                     {
                         passwordIsValid = true;
-                        needsUpgrade = true; // Marcar para actualizar a hash
+                        needsUpgrade = true;
                     }
                 }
             }
             catch (SaltParseException)
             {
-                // Si BCrypt falla al parsear, asumimos que es texto plano y comparamos.
                  if (usuario.Clave == Clave)
                     {
                         passwordIsValid = true;
-                        needsUpgrade = true; // Marcar para actualizar a hash
+                        needsUpgrade = true;
                     }
             }
-
 
             if (!passwordIsValid)
             {
@@ -101,17 +70,7 @@ namespace InmobiliariaWebApp.Controllers
             if (needsUpgrade)
             {
                 var hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(Clave);
-                using (var connection = _conexion.TraerConexion())
-                {
-                    string sql = "UPDATE Usuarios SET Clave = @ClaveNueva WHERE Email = @Email";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@ClaveNueva", hashedNewPassword);
-                        command.Parameters.AddWithValue("@Email", usuario.Email);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
+                _usuarioRepository.UpdatePassword(usuario.Email, hashedNewPassword);
             }
 
             var claims = new List<Claim>
@@ -140,32 +99,8 @@ namespace InmobiliariaWebApp.Controllers
         public IActionResult Perfil()
         {
             if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
-            Usuario? usuario = null;
             var userEmail = User.Identity.Name;
-
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "SELECT Id, Nombre, Apellido, Email, Avatar FROM Usuarios WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Email", userEmail);
-                    connection.Open();
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            usuario = new Usuario
-                            {
-                                Id = reader.GetInt32("Id"),
-                                Nombre = reader.GetString("Nombre"),
-                                Apellido = reader.GetString("Apellido"),
-                                Email = reader.GetString("Email"),
-                                Avatar = reader.IsDBNull("Avatar") ? null : reader.GetString("Avatar")
-                            };
-                        }
-                    }
-                }
-            }
+            var usuario = _usuarioRepository.GetByEmail(userEmail);
             if (usuario == null) return NotFound();
             return View(usuario);
         }
@@ -178,18 +113,7 @@ namespace InmobiliariaWebApp.Controllers
             var userEmail = User.Identity.Name;
             try
             {
-                using (var connection = _conexion.TraerConexion())
-                {
-                    string sql = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido WHERE Email = @Email";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
-                        command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
-                        command.Parameters.AddWithValue("@Email", userEmail);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
+                _usuarioRepository.UpdateProfile(userEmail, usuario.Nombre, usuario.Apellido);
                 TempData["Success"] = "Perfil actualizado correctamente.";
                 return RedirectToAction(nameof(Perfil));
             }
@@ -222,21 +146,11 @@ namespace InmobiliariaWebApp.Controllers
                 }
 
                 var avatarUrl = "/uploads/avatars/" + uniqueFileName;
-
-                using (var connection = _conexion.TraerConexion())
-                {
-                    string sql = "UPDATE Usuarios SET Avatar = @Avatar WHERE Email = @Email";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Avatar", avatarUrl);
-                        command.Parameters.AddWithValue("@Email", userEmail);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
+                _usuarioRepository.UpdateAvatar(userEmail, avatarUrl);
             }
             return RedirectToAction(nameof(Perfil));
         }
+
         [Authorize]
         [HttpPost]
         public IActionResult CambiarPassword(string claveActual, string claveNueva, string confirmarClave)
@@ -250,37 +164,17 @@ namespace InmobiliariaWebApp.Controllers
                 return RedirectToAction(nameof(Perfil));
             }
 
-            using (var connection = _conexion.TraerConexion())
+            var usuario = _usuarioRepository.GetByEmail(userEmail);
+            if (usuario == null || !BCrypt.Net.BCrypt.Verify(claveActual, usuario.Clave))
             {
-                string sql = "SELECT Clave FROM Usuarios WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Email", userEmail);
-                    connection.Open();
-                    var storedPassword = command.ExecuteScalar() as string;
-
-                    if (storedPassword == null || !BCrypt.Net.BCrypt.Verify(claveActual, storedPassword))
-                    {
-                        TempData["Error"] = "La contraseña actual es incorrecta.";
-                        return RedirectToAction(nameof(Perfil));
-                    }
-                }
+                TempData["Error"] = "La contraseña actual es incorrecta.";
+                return RedirectToAction(nameof(Perfil));
             }
 
             try
             {
                 var hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(claveNueva);
-                using (var connection = _conexion.TraerConexion())
-                {
-                    string sql = "UPDATE Usuarios SET Clave = @ClaveNueva WHERE Email = @Email";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@ClaveNueva", hashedNewPassword);
-                        command.Parameters.AddWithValue("@Email", userEmail);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
+                _usuarioRepository.UpdatePassword(userEmail, hashedNewPassword);
                 TempData["Success"] = "Contraseña actualizada correctamente.";
             }
             catch
@@ -290,7 +184,7 @@ namespace InmobiliariaWebApp.Controllers
 
             return RedirectToAction(nameof(Perfil));
         }
-        
+
         [Authorize]
         [HttpPost]
         public IActionResult QuitarAvatar()
@@ -299,16 +193,7 @@ namespace InmobiliariaWebApp.Controllers
             var userEmail = User.Identity.Name;
             try
             {
-                using (var connection = _conexion.TraerConexion())
-                {
-                    string sql = "UPDATE Usuarios SET Avatar = NULL WHERE Email = @Email";
-                    using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                    {
-                        command.Parameters.AddWithValue("@Email", userEmail);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
+                _usuarioRepository.RemoveAvatar(userEmail);
                 TempData["Success"] = "Foto de perfil eliminada.";
             }
             catch

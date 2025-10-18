@@ -10,20 +10,17 @@ namespace InmobiliariaWebApp.Controllers
     [Authorize]
     public class InmuebleController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly InmuebleRepository _inmuebleRepository;
 
         public InmuebleController(ApplicationDbContext context)
         {
-            _context = context;
+            _inmuebleRepository = new InmuebleRepository(context);
         }
 
         // GET: Inmueble
         public async Task<IActionResult> Index()
         {
-            var inmuebles = await _context.Inmuebles
-                .Include(i => i.Dueño)
-                .Include(i => i.Tipo)
-                .ToListAsync();
+            var inmuebles = await _inmuebleRepository.GetAllAsync();
             return View(inmuebles);
         }
 
@@ -35,10 +32,7 @@ namespace InmobiliariaWebApp.Controllers
                 return NotFound();
             }
 
-            var inmueble = await _context.Inmuebles
-                .Include(i => i.Dueño)
-                .Include(i => i.Tipo)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var inmueble = await _inmuebleRepository.GetByIdAsync(id);
 
             if (inmueble == null)
             {
@@ -51,8 +45,8 @@ namespace InmobiliariaWebApp.Controllers
         // GET: Inmueble/Create
         public IActionResult Create()
         {
-            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto");
-            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre");
+            ViewData["PropietarioId"] = new SelectList(_inmuebleRepository.GetPropietarios(), "Id", "NombreCompleto");
+            ViewData["TipoInmuebleId"] = new SelectList(_inmuebleRepository.GetTiposInmueble(), "Id", "Nombre");
             return View();
         }
 
@@ -63,13 +57,12 @@ namespace InmobiliariaWebApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(inmueble);
-                await _context.SaveChangesAsync();
+                await _inmuebleRepository.CreateAsync(inmueble);
                 TempData["Success"] = "Inmueble creado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto", inmueble.PropietarioId);
-            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre", inmueble.TipoInmuebleId);
+            ViewData["PropietarioId"] = new SelectList(_inmuebleRepository.GetPropietarios(), "Id", "NombreCompleto", inmueble.PropietarioId);
+            ViewData["TipoInmuebleId"] = new SelectList(_inmuebleRepository.GetTiposInmueble(), "Id", "Nombre", inmueble.TipoInmuebleId);
             return View(inmueble);
         }
 
@@ -81,13 +74,13 @@ namespace InmobiliariaWebApp.Controllers
                 return NotFound();
             }
 
-            var inmueble = await _context.Inmuebles.FindAsync(id);
+            var inmueble = await _inmuebleRepository.FindAsync(id);
             if (inmueble == null)
             {
                 return NotFound();
             }
-            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto", inmueble.PropietarioId);
-            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre", inmueble.TipoInmuebleId);
+            ViewData["PropietarioId"] = new SelectList(_inmuebleRepository.GetPropietarios(), "Id", "NombreCompleto", inmueble.PropietarioId);
+            ViewData["TipoInmuebleId"] = new SelectList(_inmuebleRepository.GetTiposInmueble(), "Id", "Nombre", inmueble.TipoInmuebleId);
             return View(inmueble);
         }
 
@@ -105,13 +98,12 @@ namespace InmobiliariaWebApp.Controllers
             {
                 try
                 {
-                    _context.Update(inmueble);
-                    await _context.SaveChangesAsync();
+                    await _inmuebleRepository.UpdateAsync(inmueble);
                     TempData["Success"] = "Inmueble actualizado exitosamente.";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!InmuebleExists(inmueble.Id))
+                    if (!_inmuebleRepository.Exists(inmueble.Id))
                     {
                         return NotFound();
                     }
@@ -122,8 +114,8 @@ namespace InmobiliariaWebApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["PropietarioId"] = new SelectList(_context.Propietarios, "Id", "NombreCompleto", inmueble.PropietarioId);
-            ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre", inmueble.TipoInmuebleId);
+            ViewData["PropietarioId"] = new SelectList(_inmuebleRepository.GetPropietarios(), "Id", "NombreCompleto", inmueble.PropietarioId);
+            ViewData["TipoInmuebleId"] = new SelectList(_inmuebleRepository.GetTiposInmueble(), "Id", "Nombre", inmueble.TipoInmuebleId);
             return View(inmueble);
         }
 
@@ -136,10 +128,7 @@ namespace InmobiliariaWebApp.Controllers
                 return NotFound();
             }
 
-            var inmueble = await _context.Inmuebles
-                .Include(i => i.Dueño)
-                .Include(i => i.Tipo)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var inmueble = await _inmuebleRepository.GetByIdAsync(id);
             if (inmueble == null)
             {
                 return NotFound();
@@ -154,15 +143,10 @@ namespace InmobiliariaWebApp.Controllers
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var inmueble = await _context.Inmuebles.FindAsync(id);
             try
             {
-                if (inmueble != null)
-                {
-                    _context.Inmuebles.Remove(inmueble);
-                    await _context.SaveChangesAsync();
-                    TempData["Success"] = "Inmueble eliminado exitosamente.";
-                }
+                await _inmuebleRepository.DeleteAsync(id);
+                TempData["Success"] = "Inmueble eliminado exitosamente.";
                  return RedirectToAction(nameof(Index));
             }
             catch (Exception)
@@ -172,11 +156,6 @@ namespace InmobiliariaWebApp.Controllers
             }
 
            
-        }
-
-        private bool InmuebleExists(int id)
-        {
-            return _context.Inmuebles.Any(e => e.Id == id);
         }
     }
 }

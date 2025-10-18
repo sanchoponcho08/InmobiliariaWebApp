@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using InmobiliariaWebApp.Data;
+using InmobiliariaWebApp.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +15,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
+// 2. Registrar Repositorios y Conexion
+builder.Services.AddSingleton<Conexion>();
+builder.Services.AddScoped<PropietarioRepository>();
+builder.Services.AddScoped<InquilinoRepository>();
+builder.Services.AddScoped<InmuebleRepository>();
+builder.Services.AddScoped<ContratoRepository>();
+builder.Services.AddScoped<UsuarioRepository>();
+builder.Services.AddScoped<PagoRepository>();
+
 builder.Services.AddControllersWithViews();
 
-// 2. Configurar la autenticación con cookies
+// 3. Configurar la autenticación con cookies
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -25,7 +35,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Home/AccessDenied";
     });
 
-// 3. Configuración de la sesión
+// 4. Configuración de la sesión
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -49,7 +59,7 @@ app.UseRouting();
 
 app.UseSession();
 
-// 4. Usar autenticación y autorización
+// 5. Usar autenticación y autorización
 app.UseAuthentication();
 app.UseAuthorization();
 
