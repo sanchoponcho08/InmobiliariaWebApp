@@ -99,7 +99,7 @@ namespace InmobiliariaWebApp.Repositories
                                 FechaFin = reader.GetDateTime("FechaFin"),
                                 MontoAlquiler = reader.GetDecimal("MontoAlquiler"),
                                 FechaRescision = reader.IsDBNull(reader.GetOrdinal("FechaRescision")) ? (DateTime?)null : reader.GetDateTime("FechaRescision"),
-                                Multa = reader.IsDBNull(reader.GetOrdinal("Multa")) ? (decimal?)null : reader.GetDecimal("Multa"),
+                                Multa = reader.IsDBNull(reader.GetOrdinal("Multa")) ? 0 : reader.GetDecimal("Multa"),
                                 Inquilino = new Inquilino { 
                                     Nombre = reader.IsDBNull(reader.GetOrdinal("InquilinoNombre")) ? "" : reader.GetString("InquilinoNombre"), 
                                     Apellido = reader.IsDBNull(reader.GetOrdinal("InquilinoApellido")) ? "" : reader.GetString("InquilinoApellido") 
