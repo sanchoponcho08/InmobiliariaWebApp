@@ -3,19 +3,18 @@ using InmobiliariaWebApp.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 
 namespace InmobiliariaWebApp.Controllers
 {
     [Authorize]
     public class ContratoController : Controller
     {
-        private readonly ContratoRepository _contratoRepository;
-        private readonly UsuarioRepository _usuarioRepository;
+        private readonly IContratoRepository _contratoRepository;
 
-        public ContratoController(IConfiguration configuration)
+        public ContratoController(IContratoRepository contratoRepository)
         {
-            _contratoRepository = new ContratoRepository(configuration);
-            _usuarioRepository = new UsuarioRepository(configuration);
+            _contratoRepository = contratoRepository;
         }
 
         public IActionResult Index()
@@ -51,13 +50,7 @@ namespace InmobiliariaWebApp.Controllers
 
             try
             {
-                var userEmail = User.Identity?.Name;
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    TempData["Error"] = "No se pudo obtener la información del usuario.";
-                    return View(contrato);
-                }
-                contrato.UsuarioIdCreador = _usuarioRepository.GetCurrentUserId(userEmail);
+                contrato.UsuarioIdCreador = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 _contratoRepository.Create(contrato);
                 TempData["Success"] = "Contrato creado exitosamente.";
                 return RedirectToAction(nameof(Index));
@@ -72,7 +65,10 @@ namespace InmobiliariaWebApp.Controllers
         public IActionResult Edit(int id)
         {
             var contrato = _contratoRepository.GetById(id);
-            return contrato == null ? NotFound() : View(contrato);
+            if (contrato == null) return NotFound();
+            ViewData["InquilinoId"] = new SelectList(_contratoRepository.GetInquilinos(), "Id", "NombreCompleto");
+            ViewData["InmuebleId"] = new SelectList(_contratoRepository.GetInmuebles(), "Id", "Direccion");
+            return View(contrato);
         }
 
         [HttpPost]
@@ -136,13 +132,7 @@ namespace InmobiliariaWebApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Terminar(int id, decimal Multa)
         {
-            var userEmail = User.Identity?.Name;
-            if (string.IsNullOrEmpty(userEmail))
-            {
-                TempData["Error"] = "No se pudo obtener la información del usuario.";
-                return RedirectToAction(nameof(Index));
-            }
-            var usuarioId = _usuarioRepository.GetCurrentUserId(userEmail);
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             _contratoRepository.TerminarContrato(id, Multa, usuarioId);
             return RedirectToAction(nameof(Index));
         }

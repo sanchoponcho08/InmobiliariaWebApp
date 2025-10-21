@@ -1,3 +1,4 @@
+
 using InmobiliariaWebApp.Models;
 using InmobiliariaWebApp.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -11,11 +12,11 @@ namespace InmobiliariaWebApp.Controllers
 {
     public class UsuarioController : Controller
     {
-        private readonly UsuarioRepository _usuarioRepository;
+        private readonly IUsuarioRepository _usuarioRepository;
 
-        public UsuarioController(IConfiguration configuration)
+        public UsuarioController(IUsuarioRepository usuarioRepository)
         {
-            _usuarioRepository = new UsuarioRepository(configuration);
+            _usuarioRepository = usuarioRepository;
         }
 
         public IActionResult Login()
@@ -70,11 +71,12 @@ namespace InmobiliariaWebApp.Controllers
             if (needsUpgrade)
             {
                 var hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(Clave);
-                _usuarioRepository.UpdatePassword(usuario.Email, hashedNewPassword);
+                _usuarioRepository.UpdatePassword(usuario.Id, hashedNewPassword);
             }
 
             var claims = new List<Claim>
             {
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
                 new Claim(ClaimTypes.Name, usuario.Email),
                 new Claim("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
                 new Claim(ClaimTypes.Role, usuario.Rol),
@@ -98,9 +100,8 @@ namespace InmobiliariaWebApp.Controllers
         [Authorize]
         public IActionResult Perfil()
         {
-            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
-            var userEmail = User.Identity.Name;
-            var usuario = _usuarioRepository.GetByEmail(userEmail);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var usuario = _usuarioRepository.GetById(userId);
             if (usuario == null) return NotFound();
             return View(usuario);
         }
@@ -109,11 +110,11 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult Perfil(Usuario usuario)
         {
-            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
-            var userEmail = User.Identity.Name;
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            usuario.Id = userId;
             try
             {
-                _usuarioRepository.UpdateProfile(userEmail, usuario.Nombre, usuario.Apellido);
+                _usuarioRepository.UpdateProfile(usuario);
                 TempData["Success"] = "Perfil actualizado correctamente.";
                 return RedirectToAction(nameof(Perfil));
             }
@@ -128,8 +129,7 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult ActualizarAvatar(IFormFile avatar)
         {
-            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
-            var userEmail = User.Identity.Name;
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             if (avatar != null && avatar.Length > 0)
             {
                 var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars");
@@ -146,7 +146,7 @@ namespace InmobiliariaWebApp.Controllers
                 }
 
                 var avatarUrl = "/uploads/avatars/" + uniqueFileName;
-                _usuarioRepository.UpdateAvatar(userEmail, avatarUrl);
+                _usuarioRepository.UpdateAvatar(userId, avatarUrl);
             }
             return RedirectToAction(nameof(Perfil));
         }
@@ -155,8 +155,7 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult CambiarPassword(string claveActual, string claveNueva, string confirmarClave)
         {
-            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
-            var userEmail = User.Identity.Name;
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             if (string.IsNullOrEmpty(claveNueva) || claveNueva != confirmarClave)
             {
@@ -164,7 +163,7 @@ namespace InmobiliariaWebApp.Controllers
                 return RedirectToAction(nameof(Perfil));
             }
 
-            var usuario = _usuarioRepository.GetByEmail(userEmail);
+            var usuario = _usuarioRepository.GetById(userId);
             if (usuario == null || !BCrypt.Net.BCrypt.Verify(claveActual, usuario.Clave))
             {
                 TempData["Error"] = "La contraseña actual es incorrecta.";
@@ -174,7 +173,7 @@ namespace InmobiliariaWebApp.Controllers
             try
             {
                 var hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(claveNueva);
-                _usuarioRepository.UpdatePassword(userEmail, hashedNewPassword);
+                _usuarioRepository.UpdatePassword(userId, hashedNewPassword);
                 TempData["Success"] = "Contraseña actualizada correctamente.";
             }
             catch
@@ -189,11 +188,10 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult QuitarAvatar()
         {
-            if (User.Identity == null || string.IsNullOrEmpty(User.Identity.Name)) return Unauthorized();
-            var userEmail = User.Identity.Name;
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             try
             {
-                _usuarioRepository.RemoveAvatar(userEmail);
+                _usuarioRepository.RemoveAvatar(userId);
                 TempData["Success"] = "Foto de perfil eliminada.";
             }
             catch

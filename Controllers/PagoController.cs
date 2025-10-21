@@ -2,21 +2,20 @@ using InmobiliariaWebApp.Models;
 using InmobiliariaWebApp.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace InmobiliariaWebApp.Controllers
 {
     [Authorize]
     public class PagoController : Controller
     {
-        private readonly PagoRepository _pagoRepository;
-        private readonly UsuarioRepository _usuarioRepository;
-        private readonly ContratoRepository _contratoRepository;
+        private readonly IPagoRepository _pagoRepository;
+        private readonly IContratoRepository _contratoRepository;
 
-        public PagoController(IConfiguration configuration)
+        public PagoController(IPagoRepository pagoRepository, IContratoRepository contratoRepository)
         {
-            _pagoRepository = new PagoRepository(configuration);
-            _usuarioRepository = new UsuarioRepository(configuration);
-            _contratoRepository = new ContratoRepository(configuration);
+            _pagoRepository = pagoRepository;
+            _contratoRepository = contratoRepository;
         }
 
         public IActionResult Index(int id)
@@ -48,13 +47,7 @@ namespace InmobiliariaWebApp.Controllers
         {
             try
             {
-                var userEmail = User.Identity?.Name;
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    TempData["Error"] = "No se pudo obtener la información del usuario.";
-                    return View(pago);
-                }
-                pago.UsuarioIdCreador = _usuarioRepository.GetCurrentUserId(userEmail);
+                pago.UsuarioIdCreador = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 _pagoRepository.Create(pago);
                 TempData["Success"] = "Pago registrado exitosamente.";
                 return RedirectToAction(nameof(Index), new { id = pago.ContratoId });
@@ -87,13 +80,7 @@ namespace InmobiliariaWebApp.Controllers
             try
             {
                 contratoId = _pagoRepository.GetContratoIdByPagoId(id);
-                var userEmail = User.Identity?.Name;
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    TempData["Error"] = "No se pudo obtener la información del usuario.";
-                    return RedirectToAction(nameof(Index), new { id = contratoId });
-                }
-                var usuarioId = _usuarioRepository.GetCurrentUserId(userEmail);
+                var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 _pagoRepository.Anular(id, usuarioId);
                 TempData["Success"] = "Pago anulado correctamente.";
                 return RedirectToAction(nameof(Index), new { id = contratoId });
