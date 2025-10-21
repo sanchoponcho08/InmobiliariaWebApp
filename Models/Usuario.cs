@@ -9,5 +9,7 @@ namespace InmobiliariaWebApp.Models
         public string Clave { get; set; } = string.Empty;
         public string Rol { get; set; } = string.Empty;
         public string? Avatar { get; set; }
+
+        public string NombreCompleto => $"{Nombre} {Apellido}";
     }
 }
