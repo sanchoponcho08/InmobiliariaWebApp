@@ -16,13 +16,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 2. Registrar Repositorios (patrón ADO.NET)
 // Se registra como Scoped para que se cree una instancia por cada petición HTTP.
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IContratoRepository, ContratoRepository>();
+builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 
-// Aquí registraremos los demás repositorios a medida que los migremos
-// builder.Services.AddScoped<IPropietarioRepository, PropietarioRepository>();
-// builder.Services.AddScoped<IInquilinoRepository, InquilinoRepository>();
-// builder.Services.AddScoped<IInmuebleRepository, InmuebleRepository>();
-// builder.Services.AddScoped<IContratoRepository, ContratoRepository>();
-// builder.Services.AddScoped<IPagoRepository, PagoRepository>();
+
 
 builder.Services.AddControllersWithViews();
 
