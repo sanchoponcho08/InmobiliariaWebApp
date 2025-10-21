@@ -1,28 +1,23 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
-using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-// 1. Configuración de la base de datos
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 21)) 
-    )
-);
+// 1. Eliminar configuración de Entity Framework DbContext
+// builder.Services.AddDbContext<ApplicationDbContext>(...);
 
-// 2. Registrar Repositorios y Conexion
-builder.Services.AddSingleton<Conexion>();
-builder.Services.AddScoped<PropietarioRepository>();
-builder.Services.AddScoped<InquilinoRepository>();
-builder.Services.AddScoped<InmuebleRepository>();
-builder.Services.AddScoped<ContratoRepository>();
-builder.Services.AddScoped<UsuarioRepository>();
-builder.Services.AddScoped<PagoRepository>();
+// 2. Registrar Repositorios (patrón ADO.NET)
+// Se registra como Scoped para que se cree una instancia por cada petición HTTP.
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
+// Aquí registraremos los demás repositorios a medida que los migremos
+// builder.Services.AddScoped<IPropietarioRepository, PropietarioRepository>();
+// builder.Services.AddScoped<IInquilinoRepository, InquilinoRepository>();
+// builder.Services.AddScoped<IInmuebleRepository, InmuebleRepository>();
+// builder.Services.AddScoped<IContratoRepository, ContratoRepository>();
+// builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 
 builder.Services.AddControllersWithViews();
 

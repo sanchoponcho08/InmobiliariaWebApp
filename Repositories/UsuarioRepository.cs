@@ -1,61 +1,39 @@
-using InmobiliariaWebApp.Data;
+using System.Data;
+using System.Security.Claims;
 using InmobiliariaWebApp.Models;
-using MySqlConnector;
+using MySql.Data.MySqlClient;
 
 namespace InmobiliariaWebApp.Repositories
 {
-    public class UsuarioRepository
+    public class UsuarioRepository : RepositoryBase, IUsuarioRepository
     {
-        private readonly Conexion _conexion;
-
-        public UsuarioRepository(IConfiguration configuration)
+        public UsuarioRepository(IConfiguration configuration) : base(configuration)
         {
-            _conexion = new Conexion(configuration);
         }
 
-        public int GetCurrentUserId(string userEmail)
+        public Usuario GetByEmail(string email)
         {
-            if (string.IsNullOrEmpty(userEmail))
+            Usuario usuario = null;
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
-                return 0;
-            }
-
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "SELECT Id FROM Usuarios WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Email", userEmail);
-                    connection.Open();
-                    var id = command.ExecuteScalar();
-                    return id != null ? Convert.ToInt32(id) : 0;
-                }
-            }
-        }
-
-        public Usuario? GetByEmail(string email)
-        {
-            Usuario? usuario = null;
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "SELECT Id, Nombre, Apellido, Email, Clave, Rol, Avatar FROM Usuarios WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                string query = @"SELECT Id, Nombre, Apellido, Email, Clave, Rol, AvatarUrl FROM Usuarios WHERE Email = @Email";
+                using (MySqlCommand command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Email", email);
                     connection.Open();
-                    using (var reader = command.ExecuteReader())
+                    using (MySqlDataReader reader = command.ExecuteReader())
                     {
                         if (reader.Read())
                         {
                             usuario = new Usuario
                             {
-                                Id = reader.GetInt32("Id"),
-                                Nombre = reader.GetString("Nombre"),
-                                Apellido = reader.GetString("Apellido"),
-                                Email = reader.GetString("Email"),
-                                Clave = reader.GetString("Clave"),
-                                Rol = reader.GetString("Rol"),
-                                Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar")) ? null : reader.GetString("Avatar")
+                                Id = reader.GetInt32(nameof(Usuario.Id)),
+                                Nombre = reader.GetString(nameof(Usuario.Nombre)),
+                                Apellido = reader.GetString(nameof(Usuario.Apellido)),
+                                Email = reader.GetString(nameof(Usuario.Email)),
+                                Clave = reader.GetString(nameof(Usuario.Clave)),
+                                Rol = reader.GetInt32(nameof(Usuario.Rol)),
+                                AvatarUrl = reader.IsDBNull(reader.GetOrdinal("AvatarUrl")) ? null : reader.GetString(nameof(Usuario.AvatarUrl)),
                             };
                         }
                     }
@@ -64,64 +42,7 @@ namespace InmobiliariaWebApp.Repositories
             return usuario;
         }
 
-        public void UpdateProfile(string email, string nombre, string apellido)
-        {
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "UPDATE Usuarios SET Nombre = @Nombre, Apellido = @Apellido WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Nombre", nombre);
-                    command.Parameters.AddWithValue("@Apellido", apellido);
-                    command.Parameters.AddWithValue("@Email", email);
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
-        public void UpdatePassword(string email, string newPassword)
-        {
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "UPDATE Usuarios SET Clave = @ClaveNueva WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@ClaveNueva", newPassword);
-                    command.Parameters.AddWithValue("@Email", email);
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
-        public void UpdateAvatar(string email, string avatarUrl)
-        {
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "UPDATE Usuarios SET Avatar = @Avatar WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Avatar", avatarUrl);
-                    command.Parameters.AddWithValue("@Email", email);
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
-        public void RemoveAvatar(string email)
-        {
-            using (var connection = _conexion.TraerConexion())
-            {
-                string sql = "UPDATE Usuarios SET Avatar = NULL WHERE Email = @Email";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
-                {
-                    command.Parameters.AddWithValue("@Email", email);
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
+        // Aquí irían los demás métodos CRUD (GetAll, GetById, Save, Delete) implementados de forma similar
+        // Por ahora, nos centramos en el login para probar que la nueva estructura funciona.
     }
 }
