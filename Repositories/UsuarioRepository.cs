@@ -18,7 +18,7 @@ namespace InmobiliariaWebApp.Repositories
             Usuario usuario = null;
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
-                string query = @"SELECT Id, Nombre, Apellido, Email, Clave, Rol, AvatarUrl FROM Usuarios WHERE Email = @Email";
+                string query = @"SELECT Id, Nombre, Apellido, Email, Clave, Rol, Avatar FROM Usuarios WHERE Email = @Email";
                 using (MySqlCommand command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Email", email);
@@ -34,8 +34,8 @@ namespace InmobiliariaWebApp.Repositories
                                 Apellido = reader.GetString(nameof(Usuario.Apellido)),
                                 Email = reader.GetString(nameof(Usuario.Email)),
                                 Clave = reader.GetString(nameof(Usuario.Clave)),
-                                Rol = reader.GetInt32(nameof(Usuario.Rol)),
-                                AvatarUrl = reader.IsDBNull(reader.GetOrdinal("AvatarUrl")) ? null : reader.GetString(nameof(Usuario.AvatarUrl)),
+                                Rol = reader.GetString(nameof(Usuario.Rol)),
+                                Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar")) ? null : reader.GetString(nameof(Usuario.Avatar)),
                             };
                         }
                     }
@@ -43,8 +43,10 @@ namespace InmobiliariaWebApp.Repositories
             }
             return usuario;
         }
-
-        // Aquí irían los demás métodos CRUD (GetAll, GetById, Save, Delete) implementados de forma similar
-        // Por ahora, nos centramos en el login para probar que la nueva estructura funciona.
+        public int GetCurrentUserId() { return 1;}
+        public void UpdatePassword(int id, string password){}
+        public void UpdateProfile(Usuario usuario){}
+        public void UpdateAvatar(int id, string avatar){}
+        public void RemoveAvatar(int id){}
     }
 }

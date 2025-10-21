@@ -1,3 +1,4 @@
+
 using InmobiliariaWebApp.Models;
 
 namespace InmobiliariaWebApp.Repositories
@@ -5,6 +6,10 @@ namespace InmobiliariaWebApp.Repositories
     public interface IUsuarioRepository
     {
         Usuario GetByEmail(string email);
-        // Aquí definiremos los demás métodos que necesitemos
+        int GetCurrentUserId();
+        void UpdatePassword(int id, string password);
+        void UpdateProfile(Usuario usuario);
+        void UpdateAvatar(int id, string avatar);
+        void RemoveAvatar(int id);
     }
 }
