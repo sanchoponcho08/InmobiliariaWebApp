@@ -4,50 +4,51 @@
     ViewData["Title"] = "Detalles del Contrato";
 }
 
-<h1>Detalles del Contrato</h1>
-
-<div>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-3">Inquilino</dt>
-        <dd class = "col-sm-9">@Model.Inquilino?.NombreCompleto</dd>
-        
-        <dt class = "col-sm-3">Inmueble</dt>
-        <dd class = "col-sm-9">@Model.Inmueble?.Direccion</dd>
-
-        <dt class = "col-sm-3">Dueño del Inmueble</dt>
-        <dd class = "col-sm-9">@Model.Inmueble?.Dueño?.NombreCompleto</dd>
-        
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.FechaInicio)</dt>
-        <dd class = "col-sm-9">@Model.FechaInicio.ToShortDateString()</dd>
-        
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.FechaFin)</dt>
-        <dd class = "col-sm-9">@Model.FechaFin.ToShortDateString()</dd>
-        
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.MontoAlquiler)</dt>
-        <dd class = "col-sm-9">@Model.MontoAlquiler.ToString("C")</dd>
-    </dl>
-
-    @if (User.IsInRole("Administrador"))
-    {
-        <hr />
-        <h4>Información de Auditoría</h4>
+<div class="card">
+    <div class="card-header">
+        <h1>Detalles del Contrato</h1>
+    </div>
+    <div class="card-body">
         <dl class="row">
-            @if (Model.Creador != null)
-            {
-                <dt class="col-sm-3">Contrato Creado Por</dt>
-                <dd class="col-sm-9">@Model.Creador.Nombre @Model.Creador.Apellido</dd>
-            }
-            @if (Model.Terminador != null)
-            {
-                <dt class="col-sm-3">Contrato Terminado Por</dt>
-                <dd class="col-sm-9">@Model.Terminador.Nombre @Model.Terminador.Apellido</dd>
-            }
+            <dt class = "col-sm-3">Inquilino</dt>
+            <dd class = "col-sm-9">@Model.Inquilino?.NombreCompleto</dd>
+            
+            <dt class = "col-sm-3">Inmueble</dt>
+            <dd class = "col-sm-9">@Model.Inmueble?.Direccion</dd>
+
+            <dt class = "col-sm-3">Dueño del Inmueble</dt>
+            <dd class = "col-sm-9">@Model.Inmueble?.Dueño?.NombreCompleto</dd>
+            
+            <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.FechaInicio)</dt>
+            <dd class = "col-sm-9">@Model.FechaInicio.ToShortDateString()</dd>
+            
+            <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.FechaFin)</dt>
+            <dd class = "col-sm-9">@Model.FechaFin.ToShortDateString()</dd>
+            
+            <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.MontoAlquiler)</dt>
+            <dd class = "col-sm-9">@Model.MontoAlquiler.ToString("C")</dd>
         </dl>
-    }
-</div>
-<br/>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-primary">Editar</a> |
-    <a asp-action="Index">Volver al Listado</a>
+
+        @if (User.IsInRole("Administrador"))
+        {
+            <hr />
+            <h4>Información de Auditoría</h4>
+            <dl class="row">
+                @if (Model.Creador != null)
+                {
+                    <dt class="col-sm-3">Contrato Creado Por</dt>
+                    <dd class="col-sm-9">@Model.Creador.NombreCompleto</dd>
+                }
+                @if (Model.Terminador != null)
+                {
+                    <dt class="col-sm-3">Contrato Terminado Por</dt>
+                    <dd class="col-sm-9">@Model.Terminador.NombreCompleto</dd>
+                }
+            </dl>
+        }
+    </div>
+    <div class="card-footer">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar</a>
+        <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>
+    </div>
 </div>
