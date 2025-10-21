@@ -1,23 +1,19 @@
-using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
 using MySqlConnector;
 using System.Data;
 
 namespace InmobiliariaWebApp.Repositories
 {
-    public class ContratoRepository
+    public class ContratoRepository : RepositoryBase, IContratoRepository
     {
-        private readonly Conexion _conexion;
-
-        public ContratoRepository(IConfiguration configuration)
+        public ContratoRepository(IConfiguration configuration) : base(configuration)
         {
-            _conexion = new Conexion(configuration);
         }
 
         public List<Contrato> GetAll()
         {
             var contratos = new List<Contrato>();
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = @"
                     SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler, c.InquilinoId, c.InmuebleId,
@@ -29,7 +25,7 @@ namespace InmobiliariaWebApp.Repositories
                     LEFT JOIN Inmuebles im ON c.InmuebleId = im.Id
                     LEFT JOIN Propietarios p ON im.PropietarioId = p.Id";
 
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     connection.Open();
                     using (var reader = command.ExecuteReader())
@@ -66,10 +62,10 @@ namespace InmobiliariaWebApp.Repositories
             return contratos;
         }
 
-        public Contrato? GetById(int id)
+        public Contrato GetById(int id)
         {
-            Contrato? contrato = null;
-            using (var connection = _conexion.TraerConexion())
+            Contrato contrato = null;
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = @"
                     SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler, c.FechaRescision, c.Multa,
@@ -86,7 +82,7 @@ namespace InmobiliariaWebApp.Repositories
                     LEFT JOIN Usuarios ut ON c.UsuarioIdTerminador = ut.Id
                     WHERE c.Id = @Id";
 
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
                     connection.Open();
@@ -101,7 +97,7 @@ namespace InmobiliariaWebApp.Repositories
                                 FechaFin = reader.GetDateTime("FechaFin"),
                                 MontoAlquiler = reader.GetDecimal("MontoAlquiler"),
                                 FechaRescision = reader.IsDBNull(reader.GetOrdinal("FechaRescision")) ? (DateTime?)null : reader.GetDateTime("FechaRescision"),
-                                Multa = reader.GetDecimal("Multa"),
+                                Multa = reader.IsDBNull(reader.GetOrdinal("Multa")) ? 0 : reader.GetDecimal("Multa"),
                                 Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre"), Apellido = reader.GetString("InquilinoApellido") },
                                 Inmueble = new Inmueble
                                 {
@@ -120,10 +116,10 @@ namespace InmobiliariaWebApp.Repositories
 
         public void Create(Contrato contrato)
         {
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = "INSERT INTO Contratos (InquilinoId, InmuebleId, FechaInicio, FechaFin, MontoAlquiler, UsuarioIdCreador, FechaRescision, Multa) VALUES (@InquilinoId, @InmuebleId, @FechaInicio, @FechaFin, @MontoAlquiler, @UsuarioIdCreador, NULL, 0)";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@InquilinoId", contrato.InquilinoId);
                     command.Parameters.AddWithValue("@InmuebleId", contrato.InmuebleId);
@@ -139,10 +135,10 @@ namespace InmobiliariaWebApp.Repositories
 
         public void Update(int id, Contrato contrato)
         {
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = "UPDATE Contratos SET InquilinoId = @InquilinoId, InmuebleId = @InmuebleId, FechaInicio = @FechaInicio, FechaFin = @FechaFin, MontoAlquiler = @MontoAlquiler WHERE Id = @Id";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@InquilinoId", contrato.InquilinoId);
                     command.Parameters.AddWithValue("@InmuebleId", contrato.InmuebleId);
@@ -158,17 +154,17 @@ namespace InmobiliariaWebApp.Repositories
 
         public void Delete(int id)
         {
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
                 string sqlPagos = "DELETE FROM Pagos WHERE ContratoId = @ContratoId";
-                using (var command = new MySqlCommand(sqlPagos, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sqlPagos, connection))
                 {
                     command.Parameters.AddWithValue("@ContratoId", id);
                     command.ExecuteNonQuery();
                 }
                 string sqlContrato = "DELETE FROM Contratos WHERE Id = @Id";
-                using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sqlContrato, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
                     command.ExecuteNonQuery();
@@ -178,11 +174,11 @@ namespace InmobiliariaWebApp.Repositories
 
         public void TerminarContrato(int id, decimal multa, int usuarioId)
         {
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
                 string sqlContrato = "UPDATE Contratos SET FechaRescision = @FechaRescision, Multa = @Multa, UsuarioIdTerminador = @UsuarioIdTerminador WHERE Id = @Id";
-                using (var command = new MySqlCommand(sqlContrato, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sqlContrato, connection))
                 {
                     command.Parameters.AddWithValue("@FechaRescision", DateTime.Now);
                     command.Parameters.AddWithValue("@Multa", multa);
@@ -192,7 +188,7 @@ namespace InmobiliariaWebApp.Repositories
                 }
 
                 string sqlPago = "INSERT INTO Pagos (NumeroPago, ContratoId, FechaPago, Importe, Detalle, Estado, UsuarioIdCreador) VALUES (@NumeroPago, @ContratoId, @FechaPago, @Importe, @Detalle, @Estado, @UsuarioIdCreador)";
-                using (var command = new MySqlCommand(sqlPago, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sqlPago, connection))
                 {
                     command.Parameters.AddWithValue("@NumeroPago", 99);
                     command.Parameters.AddWithValue("@ContratoId", id);
@@ -206,18 +202,19 @@ namespace InmobiliariaWebApp.Repositories
             }
         }
 
-        public bool VerificarSuperposicion(int inmuebleId, DateTime fechaInicio, DateTime fechaFin, int contratoId = 0)
+        public bool VerificarSuperposicion(int inmuebleId, DateTime fechaInicio, DateTime fechaFin, int? contratoId = null)
         {
             bool seSuperpone = false;
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
-                string sql = "SELECT COUNT(*) FROM Contratos WHERE InmuebleId = @InmuebleId AND @FechaInicio < FechaFin AND @FechaFin > FechaInicio AND Id != @ContratoId";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                string sql = "SELECT COUNT(*) FROM Contratos WHERE InmuebleId = @InmuebleId AND @FechaInicio < FechaFin AND @FechaFin > FechaInicio AND (@ContratoId IS NULL OR Id != @ContratoId)";
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@InmuebleId", inmuebleId);
                     command.Parameters.AddWithValue("@FechaInicio", fechaInicio);
                     command.Parameters.AddWithValue("@FechaFin", fechaFin);
-                    command.Parameters.AddWithValue("@ContratoId", contratoId);
+                    command.Parameters.AddWithValue("@ContratoId", (object)contratoId ?? DBNull.Value);
+
                     connection.Open();
                     long count = (long)command.ExecuteScalar();
                     seSuperpone = count > 0;
@@ -229,10 +226,10 @@ namespace InmobiliariaWebApp.Repositories
         public List<Inquilino> GetInquilinos()
         {
             var inquilinos = new List<Inquilino>();
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = "SELECT Id, Nombre, Apellido FROM Inquilinos";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     connection.Open();
                     using (var reader = command.ExecuteReader())
@@ -250,10 +247,10 @@ namespace InmobiliariaWebApp.Repositories
         public List<Inmueble> GetInmuebles()
         {
             var inmuebles = new List<Inmueble>();
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = "SELECT Id, Direccion FROM Inmuebles";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     connection.Open();
                     using (var reader = command.ExecuteReader())

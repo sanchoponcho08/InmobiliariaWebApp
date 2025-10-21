@@ -1,25 +1,21 @@
-using InmobiliariaWebApp.Data;
 using InmobiliariaWebApp.Models;
 using MySqlConnector;
 
 namespace InmobiliariaWebApp.Repositories
 {
-    public class PagoRepository
+    public class PagoRepository : RepositoryBase, IPagoRepository
     {
-        private readonly Conexion _conexion;
-
-        public PagoRepository(IConfiguration configuration)
+        public PagoRepository(IConfiguration configuration) : base(configuration)
         {
-            _conexion = new Conexion(configuration);
         }
 
         public List<Pago> GetPagosByContratoId(int contratoId)
         {
             var pagos = new List<Pago>();
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sqlPagos = "SELECT Id, NumeroPago, FechaPago, Importe, Detalle, Estado FROM Pagos WHERE ContratoId = @ContratoId";
-                using (var command = new MySqlCommand(sqlPagos, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sqlPagos, connection))
                 {
                     connection.Open();
                     command.Parameters.AddWithValue("@ContratoId", contratoId);
@@ -33,7 +29,7 @@ namespace InmobiliariaWebApp.Repositories
                                 NumeroPago = reader.GetInt32("NumeroPago"),
                                 FechaPago = reader.GetDateTime("FechaPago"),
                                 Importe = reader.GetDecimal("Importe"),
-                                Detalle = reader.GetString("Detalle"),
+                                Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? null : reader.GetString("Detalle"),
                                 Estado = reader.GetString("Estado")
                             });
                         }
@@ -43,10 +39,10 @@ namespace InmobiliariaWebApp.Repositories
             return pagos;
         }
 
-        public Pago? GetById(int id)
+        public Pago GetById(int id)
         {
-            Pago? pago = null;
-            using (var connection = _conexion.TraerConexion())
+            Pago pago = null;
+            using (var connection = new MySqlConnection(connectionString))
             {
                  string sql = @"
                     SELECT p.Id, p.NumeroPago, p.FechaPago, p.Importe, p.Detalle, p.Estado, p.ContratoId,
@@ -63,7 +59,7 @@ namespace InmobiliariaWebApp.Repositories
                     LEFT JOIN Usuarios ua ON p.UsuarioIdAnulador = ua.Id
                     WHERE p.Id = @Id";
                     
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
                     connection.Open();
@@ -77,7 +73,7 @@ namespace InmobiliariaWebApp.Repositories
                                 NumeroPago = reader.GetInt32("NumeroPago"),
                                 FechaPago = reader.GetDateTime("FechaPago"),
                                 Importe = reader.GetDecimal("Importe"),
-                                Detalle = reader.GetString("Detalle"),
+                                Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? null : reader.GetString("Detalle"),
                                 Estado = reader.GetString("Estado"),
                                 ContratoId = reader.GetInt32("ContratoId"),
                                 Contrato = new Contrato
@@ -100,16 +96,16 @@ namespace InmobiliariaWebApp.Repositories
 
         public void Create(Pago pago)
         {
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = "INSERT INTO Pagos (NumeroPago, ContratoId, FechaPago, Importe, Detalle, Estado, UsuarioIdCreador) VALUES (@NumeroPago, @ContratoId, @FechaPago, @Importe, @Detalle, @Estado, @UsuarioIdCreador)";
-                using (var command = new MySqlCommand(sql, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@NumeroPago", pago.NumeroPago);
                     command.Parameters.AddWithValue("@ContratoId", pago.ContratoId);
                     command.Parameters.AddWithValue("@FechaPago", pago.FechaPago);
                     command.Parameters.AddWithValue("@Importe", pago.Importe);
-                    command.Parameters.AddWithValue("@Detalle", pago.Detalle);
+                    command.Parameters.AddWithValue("@Detalle", (object)pago.Detalle ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Estado", "Vigente");
                     command.Parameters.AddWithValue("@UsuarioIdCreador", pago.UsuarioIdCreador);
                     connection.Open();
@@ -120,11 +116,11 @@ namespace InmobiliariaWebApp.Repositories
 
         public void Anular(int id, int usuarioId)
         {
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
                 string sqlUpdate = "UPDATE Pagos SET Estado = @Estado, UsuarioIdAnulador = @UsuarioIdAnulador WHERE Id = @Id";
-                using (var command = new MySqlCommand(sqlUpdate, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sqlUpdate, connection))
                 {
                     command.Parameters.AddWithValue("@Estado", "Anulado");
                     command.Parameters.AddWithValue("@UsuarioIdAnulador", usuarioId);
@@ -137,11 +133,11 @@ namespace InmobiliariaWebApp.Repositories
         public int GetContratoIdByPagoId(int id)
         {
             int contratoId = 0;
-            using (var connection = _conexion.TraerConexion())
+            using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
                 string sqlSelect = "SELECT ContratoId FROM Pagos WHERE Id = @Id";
-                using (var command = new MySqlCommand(sqlSelect, (MySqlConnection)connection))
+                using (var command = new MySqlCommand(sqlSelect, connection))
                 {
                     command.Parameters.AddWithValue("@Id", id);
                     var result = command.ExecuteScalar();
