@@ -34,7 +34,7 @@ namespace InmobiliariaWebApp.Repositories
                                 NumeroPago = reader.GetInt32("NumeroPago"),
                                 FechaPago = reader.GetDateTime("FechaPago"),
                                 Importe = reader.GetDecimal("Importe"),
-                                Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? null : reader.GetString("Detalle"),
+                                Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? string.Empty : reader.GetString("Detalle"),
                                 Estado = reader.GetString("Estado")!,
                                 Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { Nombre = reader.GetString("CreadorNombre")!, Apellido = reader.GetString("CreadorApellido")! }
                             });
@@ -79,7 +79,7 @@ namespace InmobiliariaWebApp.Repositories
                                 NumeroPago = reader.GetInt32("NumeroPago"),
                                 FechaPago = reader.GetDateTime("FechaPago"),
                                 Importe = reader.GetDecimal("Importe"),
-                                Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? null : reader.GetString("Detalle"),
+                                Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? string.Empty : reader.GetString("Detalle"),
                                 Estado = reader.GetString("Estado")!,
                                 ContratoId = reader.GetInt32("ContratoId"),
                                 Contrato = new Contrato
@@ -114,6 +114,27 @@ namespace InmobiliariaWebApp.Repositories
                     command.Parameters.AddWithValue("@Detalle", (object)pago.Detalle ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Estado", "Vigente");
                     command.Parameters.AddWithValue("@UsuarioIdCreador", pago.UsuarioIdCreador);
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void Update(Pago pago)
+        {
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                string sql = @"UPDATE Pagos SET 
+                                FechaPago = @FechaPago, 
+                                Importe = @Importe, 
+                                Detalle = @Detalle 
+                             WHERE Id = @Id";
+                using (var command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@FechaPago", pago.FechaPago);
+                    command.Parameters.AddWithValue("@Importe", pago.Importe);
+                    command.Parameters.AddWithValue("@Detalle", (object)pago.Detalle ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@Id", pago.Id);
                     connection.Open();
                     command.ExecuteNonQuery();
                 }

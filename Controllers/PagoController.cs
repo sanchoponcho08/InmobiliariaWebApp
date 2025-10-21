@@ -64,6 +64,40 @@ namespace InmobiliariaWebApp.Controllers
             }
         }
 
+        // GET: Pago/Edit/5
+        public IActionResult Edit(int id)
+        {
+            var pago = _pagoRepository.GetById(id);
+            if (pago == null)
+            {
+                return NotFound();
+            }
+            return View(pago);
+        }
+
+        // POST: Pago/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, Pago pago)
+        {
+            if (id != pago.Id)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                _pagoRepository.Update(pago);
+                TempData["Success"] = "Pago actualizado correctamente.";
+                return RedirectToAction(nameof(Index), new { id = pago.ContratoId });
+            }
+            catch
+            {
+                TempData["Error"] = "Ocurrió un error al actualizar el pago.";
+                return View(pago);
+            }
+        }
+
         [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {

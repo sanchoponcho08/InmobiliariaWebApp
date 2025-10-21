@@ -7,6 +7,7 @@ namespace InmobiliariaWebApp.Repositories
         List<Pago> GetPagosByContratoId(int contratoId);
         Pago? GetById(int id);
         void Create(Pago pago);
+        void Update(Pago pago);
         void Anular(int id, int usuarioId);
         int GetContratoIdByPagoId(int pagoId);
     }
