@@ -42,16 +42,16 @@ namespace InmobiliariaWebApp.Repositories
                                 InmuebleId = reader.GetInt32("InmuebleId"),
                                 Inquilino = new Inquilino
                                 {
-                                    Nombre = reader.GetString("InquilinoNombre")!,
-                                    Apellido = reader.GetString("InquilinoApellido")!
+                                    Nombre = reader.IsDBNull(reader.GetOrdinal("InquilinoNombre")) ? "" : reader.GetString("InquilinoNombre")!,
+                                    Apellido = reader.IsDBNull(reader.GetOrdinal("InquilinoApellido")) ? "" : reader.GetString("InquilinoApellido")!
                                 },
                                 Inmueble = new Inmueble
                                 {
-                                    Direccion = reader.GetString("InmuebleDireccion")!,
+                                    Direccion = reader.IsDBNull(reader.GetOrdinal("InmuebleDireccion")) ? "" : reader.GetString("InmuebleDireccion")!,
                                     Dueño = new Propietario
                                     {
-                                        Nombre = reader.GetString("PropietarioNombre")!,
-                                        Apellido = reader.GetString("PropietarioApellido")!
+                                        Nombre = reader.IsDBNull(reader.GetOrdinal("PropietarioNombre")) ? "" : reader.GetString("PropietarioNombre")!,
+                                        Apellido = reader.IsDBNull(reader.GetOrdinal("PropietarioApellido")) ? "" : reader.GetString("PropietarioApellido")!
                                     }
                                 }
                             });
@@ -68,7 +68,7 @@ namespace InmobiliariaWebApp.Repositories
             using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = @"
-                    SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler, c.FechaRescision, c.Multa,
+                    SELECT c.Id, c.FechaInicio, c.FechaFin, c.MontoAlquiler, c.InquilinoId, c.InmuebleId, c.FechaRescision, c.Multa,
                         i.Nombre AS InquilinoNombre, i.Apellido AS InquilinoApellido,
                         im.Direccion AS InmuebleDireccion,
                         p.Nombre AS PropietarioNombre, p.Apellido AS PropietarioApellido,
@@ -93,19 +93,33 @@ namespace InmobiliariaWebApp.Repositories
                             contrato = new Contrato
                             {
                                 Id = reader.GetInt32("Id"),
+                                InquilinoId = reader.GetInt32("InquilinoId"),
+                                InmuebleId = reader.GetInt32("InmuebleId"),
                                 FechaInicio = reader.GetDateTime("FechaInicio"),
                                 FechaFin = reader.GetDateTime("FechaFin"),
                                 MontoAlquiler = reader.GetDecimal("MontoAlquiler"),
                                 FechaRescision = reader.IsDBNull(reader.GetOrdinal("FechaRescision")) ? (DateTime?)null : reader.GetDateTime("FechaRescision"),
-                                Multa = reader.IsDBNull(reader.GetOrdinal("Multa")) ? 0 : reader.GetDecimal("Multa"),
-                                Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre")!, Apellido = reader.GetString("InquilinoApellido")! },
+                                Multa = reader.IsDBNull(reader.GetOrdinal("Multa")) ? (decimal?)null : reader.GetDecimal("Multa"),
+                                Inquilino = new Inquilino { 
+                                    Nombre = reader.IsDBNull(reader.GetOrdinal("InquilinoNombre")) ? "" : reader.GetString("InquilinoNombre"), 
+                                    Apellido = reader.IsDBNull(reader.GetOrdinal("InquilinoApellido")) ? "" : reader.GetString("InquilinoApellido") 
+                                },
                                 Inmueble = new Inmueble
                                 {
-                                    Direccion = reader.GetString("InmuebleDireccion")!,
-                                    Dueño = new Propietario { Nombre = reader.GetString("PropietarioNombre")!, Apellido = reader.GetString("PropietarioApellido")! }
+                                    Direccion = reader.IsDBNull(reader.GetOrdinal("InmuebleDireccion")) ? "" : reader.GetString("InmuebleDireccion"),
+                                    Dueño = new Propietario { 
+                                        Nombre = reader.IsDBNull(reader.GetOrdinal("PropietarioNombre")) ? "" : reader.GetString("PropietarioNombre"), 
+                                        Apellido = reader.IsDBNull(reader.GetOrdinal("PropietarioApellido")) ? "" : reader.GetString("PropietarioApellido")
+                                    }
                                 },
-                                Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { Nombre = reader.GetString("CreadorNombre"), Apellido = reader.GetString("CreadorApellido") },
-                                Terminador = reader.IsDBNull(reader.GetOrdinal("TerminadorNombre")) ? null : new Usuario { Nombre = reader.GetString("TerminadorNombre"), Apellido = reader.GetString("TerminadorApellido") }
+                                Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { 
+                                    Nombre = reader.GetString("CreadorNombre"), 
+                                    Apellido = reader.GetString("CreadorApellido") 
+                                },
+                                Terminador = reader.IsDBNull(reader.GetOrdinal("TerminadorNombre")) ? null : new Usuario { 
+                                    Nombre = reader.GetString("TerminadorNombre"), 
+                                    Apellido = reader.GetString("TerminadorApellido")
+                                }
                             };
                         }
                     }
@@ -213,10 +227,10 @@ namespace InmobiliariaWebApp.Repositories
                     command.Parameters.AddWithValue("@InmuebleId", inmuebleId);
                     command.Parameters.AddWithValue("@FechaInicio", fechaInicio);
                     command.Parameters.AddWithValue("@FechaFin", fechaFin);
-                    command.Parameters.AddWithValue("@ContratoId", (object)contratoId ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@ContratoId", contratoId.HasValue ? (object)contratoId.Value : DBNull.Value);
 
                     connection.Open();
-                    long count = (long)command.ExecuteScalar();
+                    long count = Convert.ToInt64(command.ExecuteScalar());
                     seSuperpone = count > 0;
                 }
             }
