@@ -62,9 +62,9 @@ namespace InmobiliariaWebApp.Repositories
             return contratos;
         }
 
-        public Contrato GetById(int id)
+        public Contrato? GetById(int id)
         {
-            Contrato contrato = null;
+            Contrato? contrato = null;
             using (var connection = new MySqlConnection(connectionString))
             {
                 string sql = @"

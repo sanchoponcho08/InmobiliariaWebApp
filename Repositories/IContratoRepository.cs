@@ -5,7 +5,7 @@ namespace InmobiliariaWebApp.Repositories
     public interface IContratoRepository
     {
         List<Contrato> GetAll();
-        Contrato GetById(int id);
+        Contrato? GetById(int id);
         List<Inquilino> GetInquilinos();
         List<Inmueble> GetInmuebles();
         bool VerificarSuperposicion(int inmuebleId, DateTime fechaInicio, DateTime fechaFin, int? contratoId = null);

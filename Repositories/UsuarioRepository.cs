@@ -13,9 +13,9 @@ namespace InmobiliariaWebApp.Repositories
         {
         }
 
-        public Usuario GetByEmail(string email)
+        public Usuario? GetByEmail(string email)
         {
-            Usuario usuario = null;
+            Usuario? usuario = null;
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
                 string query = @"SELECT Id, Nombre, Apellido, Email, Clave, Rol, Avatar FROM Usuarios WHERE Email = @Email";
@@ -44,9 +44,9 @@ namespace InmobiliariaWebApp.Repositories
             return usuario;
         }
 
-        public Usuario GetById(int id)
+        public Usuario? GetById(int id)
         {
-            Usuario usuario = null;
+            Usuario? usuario = null;
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
                 string query = @"SELECT Id, Nombre, Apellido, Email, Clave, Rol, Avatar FROM Usuarios WHERE Id = @Id";

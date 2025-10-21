@@ -12,7 +12,7 @@ namespace InmobiliariaWebApp.Repositories
         public RepositoryBase(IConfiguration configuration)
         {
             // La cadena de conexión se obtiene de appsettings.json
-            connectionString = configuration.GetConnectionString("DefaultConnection");
+            connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
     }
 }

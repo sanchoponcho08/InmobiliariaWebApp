@@ -39,9 +39,9 @@ namespace InmobiliariaWebApp.Repositories
             return pagos;
         }
 
-        public Pago GetById(int id)
+        public Pago? GetById(int id)
         {
-            Pago pago = null;
+            Pago? pago = null;
             using (var connection = new MySqlConnection(connectionString))
             {
                  string sql = @"
