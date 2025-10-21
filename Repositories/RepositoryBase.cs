@@ -1,5 +1,6 @@
+
 using System.Data;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Microsoft.Extensions.Configuration;
 
 namespace InmobiliariaWebApp.Repositories

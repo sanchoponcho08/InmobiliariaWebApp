@@ -1,8 +1,9 @@
+
 using System.Data;
 using System.Security.Claims;
 using InmobiliariaWebApp.Models;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace InmobiliariaWebApp.Repositories
 {
