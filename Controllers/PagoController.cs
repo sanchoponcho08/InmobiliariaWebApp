@@ -47,7 +47,12 @@ namespace InmobiliariaWebApp.Controllers
         {
             try
             {
-                pago.UsuarioIdCreador = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdValue, out var userId))
+                {
+                    return Unauthorized();
+                }
+                pago.UsuarioIdCreador = userId;
                 _pagoRepository.Create(pago);
                 TempData["Success"] = "Pago registrado exitosamente.";
                 return RedirectToAction(nameof(Index), new { id = pago.ContratoId });
@@ -80,7 +85,11 @@ namespace InmobiliariaWebApp.Controllers
             try
             {
                 contratoId = _pagoRepository.GetContratoIdByPagoId(id);
-                var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdValue, out var usuarioId))
+                {
+                    return Unauthorized();
+                }
                 _pagoRepository.Anular(id, usuarioId);
                 TempData["Success"] = "Pago anulado correctamente.";
                 return RedirectToAction(nameof(Index), new { id = contratoId });

@@ -50,7 +50,12 @@ namespace InmobiliariaWebApp.Controllers
 
             try
             {
-                contrato.UsuarioIdCreador = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdValue, out var userId))
+                {
+                    return Unauthorized();
+                }
+                contrato.UsuarioIdCreador = userId;
                 _contratoRepository.Create(contrato);
                 TempData["Success"] = "Contrato creado exitosamente.";
                 return RedirectToAction(nameof(Index));
@@ -132,7 +137,11 @@ namespace InmobiliariaWebApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Terminar(int id, decimal Multa)
         {
-            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var usuarioId))
+            {
+                return Unauthorized();
+            }
             _contratoRepository.TerminarContrato(id, Multa, usuarioId);
             return RedirectToAction(nameof(Index));
         }

@@ -100,7 +100,11 @@ namespace InmobiliariaWebApp.Controllers
         [Authorize]
         public IActionResult Perfil()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
             var usuario = _usuarioRepository.GetById(userId);
             if (usuario == null) return NotFound();
             return View(usuario);
@@ -110,7 +114,11 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult Perfil(Usuario usuario)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
             usuario.Id = userId;
             try
             {
@@ -129,7 +137,11 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult ActualizarAvatar(IFormFile avatar)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
             if (avatar != null && avatar.Length > 0)
             {
                 var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars");
@@ -155,7 +167,11 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult CambiarPassword(string claveActual, string claveNueva, string confirmarClave)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
 
             if (string.IsNullOrEmpty(claveNueva) || claveNueva != confirmarClave)
             {
@@ -188,7 +204,11 @@ namespace InmobiliariaWebApp.Controllers
         [HttpPost]
         public IActionResult QuitarAvatar()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
             try
             {
                 _usuarioRepository.RemoveAvatar(userId);

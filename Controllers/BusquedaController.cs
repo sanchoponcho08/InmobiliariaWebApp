@@ -23,14 +23,14 @@ namespace InmobiliariaWebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Buscar(DateTime fechaInicio, DateTime fechaFin, int tipoInmuebleId, decimal precioMin, decimal precioMax)
+        public IActionResult Buscar(DateTime fechaInicio, DateTime fechaFin, int tipoInmuebleId, decimal precioMin, decimal precioMax)
         {
             // // inmuebles ocupados en esas fechas
-            // var inmueblesOcupadosIds = await _context.Contratos
+            // var inmueblesOcupadosIds = _context.Contratos
             //     .Where(c => (fechaInicio < c.FechaFin && fechaFin > c.FechaInicio))
             //     .Select(c => c.InmuebleId)
             //     .Distinct()
-            //     .ToListAsync();
+            //     .ToList();
 
             // var consulta = _context.Inmuebles
             //     .Include(i => i.Dueño)
@@ -59,7 +59,7 @@ namespace InmobiliariaWebApp.Controllers
             //     consulta = consulta.Where(i => i.Precio <= precioMax);
             // }
 
-            // var inmueblesDisponibles = await consulta.ToListAsync();
+            // var inmueblesDisponibles = consulta.ToList();
             
             // ViewData["TipoInmuebleId"] = new SelectList(_context.TiposInmuebles, "Id", "Nombre", tipoInmuebleId);
 

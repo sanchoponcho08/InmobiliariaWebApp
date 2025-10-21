@@ -42,16 +42,16 @@ namespace InmobiliariaWebApp.Repositories
                                 InmuebleId = reader.GetInt32("InmuebleId"),
                                 Inquilino = new Inquilino
                                 {
-                                    Nombre = reader.GetString("InquilinoNombre"),
-                                    Apellido = reader.GetString("InquilinoApellido")
+                                    Nombre = reader.GetString("InquilinoNombre")!,
+                                    Apellido = reader.GetString("InquilinoApellido")!
                                 },
                                 Inmueble = new Inmueble
                                 {
-                                    Direccion = reader.GetString("InmuebleDireccion"),
+                                    Direccion = reader.GetString("InmuebleDireccion")!,
                                     Dueño = new Propietario
                                     {
-                                        Nombre = reader.GetString("PropietarioNombre"),
-                                        Apellido = reader.GetString("PropietarioApellido")
+                                        Nombre = reader.GetString("PropietarioNombre")!,
+                                        Apellido = reader.GetString("PropietarioApellido")!
                                     }
                                 }
                             });
@@ -98,11 +98,11 @@ namespace InmobiliariaWebApp.Repositories
                                 MontoAlquiler = reader.GetDecimal("MontoAlquiler"),
                                 FechaRescision = reader.IsDBNull(reader.GetOrdinal("FechaRescision")) ? (DateTime?)null : reader.GetDateTime("FechaRescision"),
                                 Multa = reader.IsDBNull(reader.GetOrdinal("Multa")) ? 0 : reader.GetDecimal("Multa"),
-                                Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre"), Apellido = reader.GetString("InquilinoApellido") },
+                                Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre")!, Apellido = reader.GetString("InquilinoApellido")! },
                                 Inmueble = new Inmueble
                                 {
-                                    Direccion = reader.GetString("InmuebleDireccion"),
-                                    Dueño = new Propietario { Nombre = reader.GetString("PropietarioNombre"), Apellido = reader.GetString("PropietarioApellido") }
+                                    Direccion = reader.GetString("InmuebleDireccion")!,
+                                    Dueño = new Propietario { Nombre = reader.GetString("PropietarioNombre")!, Apellido = reader.GetString("PropietarioApellido")! }
                                 },
                                 Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { Nombre = reader.GetString("CreadorNombre"), Apellido = reader.GetString("CreadorApellido") },
                                 Terminador = reader.IsDBNull(reader.GetOrdinal("TerminadorNombre")) ? null : new Usuario { Nombre = reader.GetString("TerminadorNombre"), Apellido = reader.GetString("TerminadorApellido") }
@@ -236,7 +236,7 @@ namespace InmobiliariaWebApp.Repositories
                     {
                         while (reader.Read())
                         {
-                            inquilinos.Add(new Inquilino { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre"), Apellido = reader.GetString("Apellido") });
+                            inquilinos.Add(new Inquilino { Id = reader.GetInt32("Id"), Nombre = reader.GetString("Nombre")!, Apellido = reader.GetString("Apellido")! });
                         }
                     }
                 }
@@ -257,7 +257,7 @@ namespace InmobiliariaWebApp.Repositories
                     {
                         while (reader.Read())
                         {
-                            inmuebles.Add(new Inmueble { Id = reader.GetInt32("Id"), Direccion = reader.GetString("Direccion") });
+                            inmuebles.Add(new Inmueble { Id = reader.GetInt32("Id"), Direccion = reader.GetString("Direccion")! });
                         }
                     }
                 }

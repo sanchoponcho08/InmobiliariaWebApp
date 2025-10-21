@@ -14,7 +14,12 @@ namespace InmobiliariaWebApp.Repositories
             var pagos = new List<Pago>();
             using (var connection = new MySqlConnection(connectionString))
             {
-                string sqlPagos = "SELECT Id, NumeroPago, FechaPago, Importe, Detalle, Estado FROM Pagos WHERE ContratoId = @ContratoId";
+                string sqlPagos = @"
+                    SELECT p.Id, p.NumeroPago, p.FechaPago, p.Importe, p.Detalle, p.Estado,
+                           uc.Nombre AS CreadorNombre, uc.Apellido AS CreadorApellido
+                    FROM Pagos p
+                    LEFT JOIN Usuarios uc ON p.UsuarioIdCreador = uc.Id
+                    WHERE p.ContratoId = @ContratoId";
                 using (var command = new MySqlCommand(sqlPagos, connection))
                 {
                     connection.Open();
@@ -30,7 +35,8 @@ namespace InmobiliariaWebApp.Repositories
                                 FechaPago = reader.GetDateTime("FechaPago"),
                                 Importe = reader.GetDecimal("Importe"),
                                 Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? null : reader.GetString("Detalle"),
-                                Estado = reader.GetString("Estado")
+                                Estado = reader.GetString("Estado")!,
+                                Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { Nombre = reader.GetString("CreadorNombre")!, Apellido = reader.GetString("CreadorApellido")! }
                             });
                         }
                     }
@@ -74,18 +80,18 @@ namespace InmobiliariaWebApp.Repositories
                                 FechaPago = reader.GetDateTime("FechaPago"),
                                 Importe = reader.GetDecimal("Importe"),
                                 Detalle = reader.IsDBNull(reader.GetOrdinal("Detalle")) ? null : reader.GetString("Detalle"),
-                                Estado = reader.GetString("Estado"),
+                                Estado = reader.GetString("Estado")!,
                                 ContratoId = reader.GetInt32("ContratoId"),
                                 Contrato = new Contrato
                                 {
                                     Id = reader.GetInt32("ContratoId"),
                                     InquilinoId = reader.GetInt32("InquilinoId"),
                                     InmuebleId = reader.GetInt32("InmuebleId"),
-                                    Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre"), Apellido = reader.GetString("InquilinoApellido") },
-                                    Inmueble = new Inmueble { Direccion = reader.GetString("InmuebleDireccion") }
+                                    Inquilino = new Inquilino { Nombre = reader.GetString("InquilinoNombre")!, Apellido = reader.GetString("InquilinoApellido")! },
+                                    Inmueble = new Inmueble { Direccion = reader.GetString("InmuebleDireccion")! }
                                 },
-                                Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { Nombre = reader.GetString("CreadorNombre"), Apellido = reader.GetString("CreadorApellido") },
-                                Anulador = reader.IsDBNull(reader.GetOrdinal("AnuladorNombre")) ? null : new Usuario { Nombre = reader.GetString("AnuladorNombre"), Apellido = reader.GetString("AnuladorApellido") }
+                                Creador = reader.IsDBNull(reader.GetOrdinal("CreadorNombre")) ? null : new Usuario { Nombre = reader.GetString("CreadorNombre")!, Apellido = reader.GetString("CreadorApellido")! },
+                                Anulador = reader.IsDBNull(reader.GetOrdinal("AnuladorNombre")) ? null : new Usuario { Nombre = reader.GetString("AnuladorNombre")!, Apellido = reader.GetString("AnuladorApellido")! }
                             };
                         }
                     }
